@@ -169,7 +169,7 @@ int main(void)
   GUI_Clear(fillScreen);
   if((lcddev.dir&1)==0) X_left = 20; else X_left = 100;
   GUI_WriteString(35, Y_str, "GRD Max", Font_16x26, WHITE, fillScreen);
-  GUI_WriteString(165, Y_str+5, " v 2.8", Font_11x18, WHITE, fillScreen);
+  GUI_WriteString(165, Y_str+5, " v 3.0", Font_11x18, WHITE, fillScreen);
   Y_str = Y_str+18+35;
   
   i16 = initData();
@@ -202,9 +202,9 @@ int main(void)
   GUI_WriteString(5, Y_str, buffTFT, Font_11x18, CYAN, BLACK);
   Y_str = Y_str+18+5;
   
-  sprintf(buffTFT,"WIDTH: %u; HEIGHT: %u",lcddev.width,lcddev.height);
-  GUI_WriteString(5, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
-  Y_str = Y_str+18+5;
+//  sprintf(buffTFT,"WIDTH: %u; HEIGHT: %u",lcddev.width,lcddev.height);
+//  GUI_WriteString(5, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
+//  Y_str = Y_str+18+5;
   
   HAL_GPIO_WritePin(Beep_GPIO_Port, Beep_Pin, GPIO_PIN_SET);
   HAL_Delay(200);
@@ -219,7 +219,7 @@ int main(void)
   
   HAL_Delay(3000);
   NEWBUTT = ON;
-//  ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=20; //???????????????????????????????????????????????????????????????
+  ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=20; //???????????????????????????????????????????????????????????????
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -239,7 +239,7 @@ int main(void)
       checkTime = 0; CHECK = ON;
     }
     // ----------------- УВЛАЖНИТЕЛЬ -------------------------------------
-    if(WORK && modeCell==3){          // только в режиме варка
+    if(WORK && modeCell==2){          // только в режиме варка modeCell==2
       if(timer10ms){                  // шаг отсчета интервала таймера 10 милисек.
         timer10ms=0; 
         HUMIDI=humidifier(HUMIDI);    // проверим выход на увлажнитель
@@ -251,7 +251,7 @@ int main(void)
     //-------------- Начало проверки каждую 1 сек. -----------------------
     if(CHECK){ CHECK = OFF; errors=0;  //if(++temp>10) {temp=0; ++pvspeed; pvspeed&=7; ds.pvT[1] = speedData[pvspeed][0]; sendToI2c(speedData[pvspeed][1]);}
       if(resetDispl) --resetDispl; else if(displ_num){displ_num = 0; NEWBUTT = 1;}  // возврат к главному дисплею
-      temperature_check();
+//      temperature_check();
       //---------------------------------- Проверка работы вентилятора -------------------------------------
       if(VENTIL){
         if(HAL_GPIO_ReadPin(Input0_GPIO_Port, Input0_Pin) == GPIO_PIN_RESET) {SPEED=ON; tmrVent=0;} // если контакт замкнут
@@ -264,13 +264,13 @@ int main(void)
       if(WORK){
         TIMER=ON;
         //??????????????????????
-//        int16_t pverr = abs(set[T0]*10 - ds.pvT[0]);
-//        int8_t pv = 0;
-//        if(pverr>50) pv = 5;
-//        else if(abs(pverr)>20) pv = 2;
-//        else pv = 1;
-//        if(HEATER) {ds.pvT[0]+=pv; ds.pvT[1]+=pv; ds.pvT[2]+=pv;}  //???????????????????????????????????????????
-//        else {ds.pvT[0]-=pv; ds.pvT[1]-=pv; ds.pvT[2]-=pv;}  //???????????????????????????????????????????
+        int16_t pverr = abs(set[T0]*10 - ds.pvT[0]);
+        int8_t pv = 0;
+        if(pverr>50) pv = 5;
+        else if(abs(pverr)>20) pv = 2;
+        else pv = 1;
+        if(HEATER) {ds.pvT[0]+=pv; ds.pvT[1]+=pv; ds.pvT[2]+=pv;}  //???????????????????????????????????????????
+        else {ds.pvT[0]-=pv; ds.pvT[1]-=pv; ds.pvT[2]-=pv;}  //???????????????????????????????????????????
         //??????????????????????
         
         i16 = set[T0]*10 - ds.pvT[0];         // величина ошибки регулирования датчика 0
@@ -319,11 +319,11 @@ int main(void)
         //-------------------------- Только для режима КОПЧЕНИЯ ---------------------------------
         if(modeCell==3){
           ELECTRO = ignition(ELECTRO);
-          if(tmrCounter==-1){
+//          if(tmrCounter==-1){ // включается только после окончания розжига
             i16 = set[T2]*10 - ds.pvT[2];     // величина ошибки регулирования датчика 2 (Дым)
             if(i16-set[ALRM]*2>0){            // ( ниже 2 грд.Ц) ДЫМ НИЗКОЙ ТЕМПЕРАТУРЫ
               if(++checkSmoke>CHKSMOKE) {checkSmoke=CHKSMOKE; errors|=0x20;} 
-            }
+//            }
             u16 = Relay(i16, set[HIST]);  // величина ошибки температуры дыма
             switch (u16){
               case ON:  SMOKE = ON;  break;

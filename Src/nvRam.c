@@ -1,11 +1,6 @@
 #include "main.h"
 #include "nvRam.h"
 
-#define MAGIC_KEY_DEFINE 0x19630301
-#define FLASH_CONFIG_START_ADDR ((uint32_t) 0x0800FC00) // (63) Будем писать в 127 страницу по адресу 0x0801FC00
-// 0x0800C800(50); 0x0800F000(60); 0x0800FC00(63); неработает[0x08010000](64); [0x08011800](70)
-#define FLASH_CONFIG_END_ADDR   FLASH_CONFIG_START_ADDR + FLASH_PAGE_SIZE
-
 extern uint8_t familycode[MAX_SENSOR][8], modeCell;
 extern uint16_t speedData[MAX_SPEED][2];
 extern uint16_t set[INDEX];
@@ -20,7 +15,7 @@ uint32_t calcChecksum(void){
     // Начальное слово для вычисления CRC
     uint32_t* configPtr = (uint32_t*)&dataRAM.config.magicNum;
     // Вычисляем CRC для всех полей структуры Config, кроме полей notUsed[5], поля checkSum и поля countSave
-    uint8_t sizeBuff = (sizeof(struct Config) - sizeof(uint32_t)*6 - sizeof(uint16_t)) / sizeof(uint32_t);
+    uint8_t sizeBuff = (sizeof(struct Config) - sizeof(uint32_t)*(UNUSED_FIELDS+1) - sizeof(uint16_t)) / sizeof(uint32_t);
     uint32_t CRCVal = HAL_CRC_Calculate(&hcrc, configPtr, sizeBuff);
     
     __HAL_RCC_CRC_CLK_DISABLE();// Отключаем clock для CRC модуля
@@ -83,7 +78,7 @@ uint8_t initData(void){
   int8_t analogSet[2]={-1,-1};
   */  
     err |= 1;
-    for(uint8_t i=0;i<5;i++){dataRAM.config.notUsed[i]=0;}
+    for(uint8_t i=0;i<UNUSED_FIELDS;i++){dataRAM.config.notUsed[i]=0;}
     
     dataRAM.config.magicNum=MAGIC_KEY_DEFINE;
     dataRAM.config.mode = 0;
@@ -113,28 +108,28 @@ uint8_t initData(void){
     dataRAM.config.modeSet1[9]=5;   // грд/10
     dataRAM.config.modeSet1[10]=0;  // Нагрев 0-прямое, 1-инвесное управление
     dataRAM.config.modeSet1[11]=0;  // Увлажнение 0-прямое, 1-инвесное управление
-// ----------- "КОПЧЕННЯ"
+// ----------- "ВАРЫННЯ"
     dataRAM.config.modeSet2[0]=72;  // грд
     dataRAM.config.modeSet2[1]=62;  // грд
     dataRAM.config.modeSet2[2]=52;  // грд
     dataRAM.config.modeSet2[3]=160; // мин
     dataRAM.config.modeSet2[4]=140; // сек
     dataRAM.config.modeSet2[5]=2;   // Скорость вентилятора %
-    dataRAM.config.modeSet2[6]=180; // Розжиг ON 180сек.
-    dataRAM.config.modeSet2[7]=2;   // пауза перед розжигом OFF 2 сек.
+    dataRAM.config.modeSet2[6]=6;   // Увлажнитель ON 0.6 сек.
+    dataRAM.config.modeSet2[7]=18;  // Увлажнитель OFF 1.8сек.
     dataRAM.config.modeSet2[8]=10;  // Авария грд.
     dataRAM.config.modeSet2[9]=5;   // грд/10
     dataRAM.config.modeSet2[10]=0;  // Нагрев 0-прямое, 1-инвесное управление
     dataRAM.config.modeSet2[11]=0;  // Увлажнение 0-прямое, 1-инвесное управление
-// ----------- "ВАРЫННЯ"
+// ----------- "КОПЧЕННЯ"
     dataRAM.config.modeSet3[0]=73;  // грд
     dataRAM.config.modeSet3[1]=63;  // грд
     dataRAM.config.modeSet3[2]=53;  // грд
     dataRAM.config.modeSet3[3]=150; // мин
     dataRAM.config.modeSet3[4]=130; // сек
     dataRAM.config.modeSet3[5]=3;   // Скорость вентилятора %
-    dataRAM.config.modeSet3[6]=60;  // Увлажнитель ON 0.6 сек.
-    dataRAM.config.modeSet3[7]=180; // Увлажнитель OFF 1.8сек.
+    dataRAM.config.modeSet3[6]=180; // Розжиг ON 180сек.
+    dataRAM.config.modeSet3[7]=2;   // пауза перед розжигом OFF 2 сек.
     dataRAM.config.modeSet3[8]=10;  // Авария грд.
     dataRAM.config.modeSet3[9]=5;   // грд/10
     dataRAM.config.modeSet3[10]=0;  // Нагрев 0-прямое, 1-инвесное управление

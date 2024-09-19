@@ -299,7 +299,8 @@ void displ_5(void){
   for (i=0; i<MAX_OTHER; i++){
     sprintf(buffTFT,"%10s", otherName[i]);
     if(i<2){
-      if(modeCell==2) flSet = set[i+MAX_SET-1]; else flSet = (float)set[i+MAX_SET-1]/100;
+      // åñëè ÂÀÐÊÀ (modeCell==2) çàäàåòñÿ â mñåê.[îò 0.1ñåê. äî 10 ñåê.] (ïåðèîä 10 mñåê.)
+      if(modeCell==2) flSet = (float)set[i+MAX_SET-1]/10; else flSet = set[i+MAX_SET-1];
       sprintf(buffTFT,"%12s:%2.1fñåê.", otherName[i], flSet); // "ÒÀÉÌ.ON","ÒÀÉÌ.OFF"
     }
     else if(i==2) sprintf(buffTFT,"%12s:%3i$", otherName[i], set[i+MAX_SET-1]); // "ÀÂÀÐÈß"
@@ -333,7 +334,8 @@ void displ_6(void){
   GUI_WriteString(X_left+20, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
 
   if(numSet<2){
-    if(modeCell==2) flSet = (float)newval[numSet]; else flSet = (float)newval[numSet]/100;
+    // åñëè ÂÀÐÊÀ (modeCell==2) çàäàåòñÿ â mñåê.[îò 0.1ñåê. äî 10 ñåê.] (ïåðèîä 10 mñåê.)
+    if(modeCell==2) flSet = (float)newval[numSet]/10; else flSet = newval[numSet];
     sprintf(buffTFT,"%2.1fñåê.", flSet); // "ÒÀÉÌ.ON","ÒÀÉÌ.OFF"
   }
   else if(numSet==2) sprintf(buffTFT,"%3i$", newval[numSet]); // "ÀÂÀÐÈß"

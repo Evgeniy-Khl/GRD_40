@@ -254,8 +254,8 @@ void checkButtons(uint8_t item){
         break;
 	 case 6://--------- ЗМІНА IНШЕ -------------------------
         if(numSet<2){
-          // если ВАРКА (modeCell==3) задается в mсек.[от 0.1сек. до 10 сек.] (период 10 mсек.)
-          if(modeCell==3){maxVal=1000, minVal=10;} else {maxVal=100, minVal=0;}// Таймер ON/OFF
+          // если ВАРКА (modeCell==2) задается в mсек.[от 0.1сек. до 10 сек.] (период 10 mсек.)
+          if(modeCell==2){maxVal=100, minVal=1;} else {maxVal=500, minVal=0;}// Таймер ON/OFF
         }
         else if(numSet==2){maxVal=50, minVal=1;}// Авария грд
         else if(numSet==3){maxVal=50, minVal=1;}// Гистерезис грд/10

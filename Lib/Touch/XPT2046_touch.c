@@ -98,7 +98,7 @@ bool XPT2046_TouchPressed(void)
 bool XPT2046_TouchGetCoordinates(uint16_t* x, uint16_t* y)
 {
   XPT2046_TouchSelect();
-  ticBeep = 20;
+//  ticBeep = 1;
   
 //#ifndef SOFTWARE_SPI
 static const uint8_t cmd_read_x[] = {0xD0}; // READ_X
