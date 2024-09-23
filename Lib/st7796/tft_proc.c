@@ -139,17 +139,8 @@ void down_relay(){
   if(--relaySet[numSet]>1) relaySet[numSet]=1;
 }
 
-//void up_out(){
-//  if(++analogSet[numSet-6]>100) analogSet[numSet-6]=100;
-//  if(numSet == MAX_SET) set[MAX_SET-1] = analogSet[numSet-6];//??????????? и там и там значение ЦАП 0
-//}
-
-//void down_out(){
-//  if(--analogSet[numSet-6]<-1) analogSet[numSet-6]=-1;
-//  if(numSet == MAX_SET) set[MAX_SET-1] = analogSet[numSet-6];//??????????? и там и там значение ЦАП 0
-//}
-
 void checkButtons(uint8_t item){
+  uint8_t top;
     switch (displ_num){
       case 0://--------- СТАН КАМЕРИ -----------------------
         switch (item){
@@ -160,14 +151,16 @@ void checkButtons(uint8_t item){
         item = 10;
         break;
       case 1://--------- СТАН ВЫХОДІВ ----------------------------------
+        switch (modeCell){
+          case 3: top=5; break;
+          case 2: top=3; break;
+          default: top=2;	break;
+        }
         switch (item){
           case 0: displ_num = 0; NEWBUTT = 1; break;
-          case 1: if(++numSet>5) numSet=0; break;
+          case 1: if(++numSet>top) numSet=0; break;
           case 2: up_relay(); break;
           case 3: down_relay(); break;
-//          case 1: if(++numSet>7) numSet=0; break;
-//          case 2: if(numSet<6) up_relay(); else up_out(); break;
-//          case 3: if(numSet<6) down_relay(); else down_out(); break;
         }
         item = 10;
         break;

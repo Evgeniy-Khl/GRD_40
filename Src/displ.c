@@ -150,7 +150,7 @@ void displ_0(void){
 
 //-------------------------------- ярюм бшунд╡б ------------------------------------------------------
 void displ_1(void){
- uint8_t i, bit;
+ uint8_t i, bit, top;
  char txt[10];
  uint16_t color_txt, color_box; 
     Y_str = Y_top;
@@ -164,8 +164,13 @@ void displ_1(void){
       drawButton(CYAN, 3, "-");
     }
 //---- пекеимше бшундш ----
+    switch (modeCell){
+    	case 3: top=6; break;
+    	case 2: top=4; break;
+    	default: top=3;	break;
+    }
     Y_str = Y_str+18+5;
-    for (i=0;i<6;i++){
+    for (i=0;i<top;i++){
         bit = 1<<i;
         sprintf(buffTFT,"%7s",relayName[i]);
         sprintf(txt," N%u: ",i+1);
@@ -177,12 +182,6 @@ void displ_1(void){
         GUI_FillRectangle(X_left+200,Y_str,30,18,color_box);
         Y_str = Y_str+18+5;
     }
-    if(ds.pvT[1]<1000) sprintf(buffTFT,"N3=%3.1f$ ",(float)ds.pvT[2]/10);
-    else if(ds.pvT[1]<1270) sprintf(buffTFT,"N3=%5d$ ", ds.pvT[2]/10);
-    else sprintf(buffTFT,"N3= ---  ");
-    GUI_WriteString(X_left+30, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
-    sprintf(buffTFT,"сЯР.%3i.0$ ", set[T2]);
-    GUI_WriteString(X_left+150, Y_str, buffTFT, Font_11x18, BLACK, WHITE);
 //---- юмюкнцнбше бшундш ----
 //    for (i=0;i<2;i++){
 //        sprintf(buffTFT,"%7s",analogName[i]);
