@@ -31,6 +31,7 @@ void setData(uint8_t m){
   	case 3: for(i=0;i<INDEX;i++){set[i] = dataRAM.config.modeSet3[i];} break;
   	default: modeCell = dataRAM.config.mode = 0; for(i=0;i<INDEX;i++){set[i] = dataRAM.config.modeSet0[i];}	break;
   }
+//  if(set[VENT]>7) set[VENT]=0;
   for(i=0;i<MAX_SENSOR;i++){
     for(x=0;x<8;x++){
       familycode[i][x] = dataRAM.config.familycode[i][x];
@@ -87,51 +88,51 @@ uint8_t initData(void){
     dataRAM.config.modeSet0[1]=60;  // Уставка T2 грд.
     dataRAM.config.modeSet0[2]=0;   // Уставка T3 грд.
     dataRAM.config.modeSet0[3]=180; // Длительность режима мин.
-    dataRAM.config.modeSet0[4]=160; // Длительность продувки сек.
-    dataRAM.config.modeSet0[5]=0;   // Скорость вентилятора %
-    dataRAM.config.modeSet0[6]=0;   // Таймер ON не используется
-    dataRAM.config.modeSet0[7]=0;   // Таймер OFF не используется
-    dataRAM.config.modeSet0[8]=10;  // Авария грд.
-    dataRAM.config.modeSet0[9]=5;   // Гистерезис грд/10
+    dataRAM.config.modeSet0[4]=0;   // Скорость вентилятора %
+    dataRAM.config.modeSet0[5]=0;   // Таймер ON не используется
+    dataRAM.config.modeSet0[6]=0;   // Таймер OFF не используется
+    dataRAM.config.modeSet0[7]=160; // Длительность продувки сек.
+    dataRAM.config.modeSet0[8]=5;   // Авария (5 грд.)
+    dataRAM.config.modeSet0[9]=5;   // Гистерезис (0.5 грд.)
     dataRAM.config.modeSet0[10]=0;  // Нагрев 0-прямое, 1-инвесное управление
     dataRAM.config.modeSet0[11]=0;  // Увлажнение 0-прямое, 1-инвесное управление
 // ----------- "ОБЖАРКА"
-    dataRAM.config.modeSet1[0]=71;  // грд
-    dataRAM.config.modeSet1[1]=61;  // грд
-    dataRAM.config.modeSet1[2]=0;   // грд
-    dataRAM.config.modeSet1[3]=170; // мин
-    dataRAM.config.modeSet1[4]=150; // сек
-    dataRAM.config.modeSet1[5]=1;   // Скорость вентилятора %
-    dataRAM.config.modeSet1[6]=0;   // Таймер ON не используется
-    dataRAM.config.modeSet1[7]=0;   // Таймер OFF не используется
-    dataRAM.config.modeSet1[8]=10;  // Авария грд.
-    dataRAM.config.modeSet1[9]=5;   // грд/10
+    dataRAM.config.modeSet1[0]=71;  // Уставка T1 рд
+    dataRAM.config.modeSet1[1]=61;  // Уставка T2 грд
+    dataRAM.config.modeSet1[2]=0;   // Уставка T3 грд
+    dataRAM.config.modeSet1[3]=170; // Длительность режима мин
+    dataRAM.config.modeSet1[4]=1;   // Скорость вентилятора %
+    dataRAM.config.modeSet1[5]=0;   // Таймер ON не используется
+    dataRAM.config.modeSet1[6]=0;   // Таймер OFF не используется
+    dataRAM.config.modeSet1[7]=150; // Длительность продувки сек
+    dataRAM.config.modeSet1[8]=5;   // Авария (5 грд.)
+    dataRAM.config.modeSet1[9]=5;   // Гистерезис (0.5 грд.)
     dataRAM.config.modeSet1[10]=0;  // Нагрев 0-прямое, 1-инвесное управление
     dataRAM.config.modeSet1[11]=0;  // Увлажнение 0-прямое, 1-инвесное управление
 // ----------- "ВАРЫННЯ"
-    dataRAM.config.modeSet2[0]=72;  // грд
-    dataRAM.config.modeSet2[1]=62;  // грд
-    dataRAM.config.modeSet2[2]=52;  // грд
-    dataRAM.config.modeSet2[3]=160; // мин
-    dataRAM.config.modeSet2[4]=140; // сек
-    dataRAM.config.modeSet2[5]=2;   // Скорость вентилятора %
-    dataRAM.config.modeSet2[6]=6;   // Увлажнитель ON 0.6 сек.
-    dataRAM.config.modeSet2[7]=18;  // Увлажнитель OFF 1.8сек.
-    dataRAM.config.modeSet2[8]=10;  // Авария грд.
-    dataRAM.config.modeSet2[9]=5;   // грд/10
+    dataRAM.config.modeSet2[0]=72;  // Уставка T1 грд
+    dataRAM.config.modeSet2[1]=62;  // Уставка T2 грд
+    dataRAM.config.modeSet2[2]=52;  // Уставка T3 грд
+    dataRAM.config.modeSet2[3]=160; // Длительность режима мин
+    dataRAM.config.modeSet2[4]=2;   // Скорость вентилятора %
+    dataRAM.config.modeSet2[5]=6;   // Увлажнитель ON 0.6 сек.
+    dataRAM.config.modeSet2[6]=18;  // Увлажнитель OFF 1.8сек.
+    dataRAM.config.modeSet2[7]=140; // Длительность продувки сек
+    dataRAM.config.modeSet2[8]=5;   // Авария (5 грд.)
+    dataRAM.config.modeSet2[9]=5;   // Гистерезис (0.5 грд.)
     dataRAM.config.modeSet2[10]=0;  // Нагрев 0-прямое, 1-инвесное управление
     dataRAM.config.modeSet2[11]=0;  // Увлажнение 0-прямое, 1-инвесное управление
 // ----------- "КОПЧЕННЯ"
-    dataRAM.config.modeSet3[0]=73;  // грд
-    dataRAM.config.modeSet3[1]=63;  // грд
-    dataRAM.config.modeSet3[2]=53;  // грд
-    dataRAM.config.modeSet3[3]=150; // мин
-    dataRAM.config.modeSet3[4]=130; // сек
-    dataRAM.config.modeSet3[5]=3;   // Скорость вентилятора %
-    dataRAM.config.modeSet3[6]=180; // Розжиг ON 180сек.
-    dataRAM.config.modeSet3[7]=2;   // пауза перед розжигом OFF 2 сек.
-    dataRAM.config.modeSet3[8]=10;  // Авария грд.
-    dataRAM.config.modeSet3[9]=5;   // грд/10
+    dataRAM.config.modeSet3[0]=73;  // Уставка T1 грд
+    dataRAM.config.modeSet3[1]=63;  // Уставка T2 грд
+    dataRAM.config.modeSet3[2]=53;  // Уставка T3 грд
+    dataRAM.config.modeSet3[3]=150; // Длительность режима мин
+    dataRAM.config.modeSet3[4]=3;   // Скорость вентилятора %
+    dataRAM.config.modeSet3[5]=180; // Розжиг ON 180сек.
+    dataRAM.config.modeSet3[6]=2;   // пауза перед розжигом OFF 2 сек.
+    dataRAM.config.modeSet3[7]=130; // Длительность продувки сек
+    dataRAM.config.modeSet3[8]=5;   // Авария (5 грд.)
+    dataRAM.config.modeSet3[9]=5;   // Гистерезис (0.5 грд.)
     dataRAM.config.modeSet3[10]=0;  // Нагрев 0-прямое, 1-инвесное управление
     dataRAM.config.modeSet3[11]=0;  // Увлажнение 0-прямое, 1-инвесное управление
     

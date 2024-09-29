@@ -34,7 +34,7 @@ int16_t max(int16_t a, int16_t b ) {
 
 //--------- Œ—ÕŒ¬ÕŒ… › –¿Õ ----------------------
 void displ_0(void){
-  Y_str = Y_top;  // 0
+  Y_str = Y_top+10;  // 0
   const char* point[3] = {"  ","  ","  "};
   uint32_t curTime = sTime.Hours*3600 + sTime.Minutes*60 + sTime.Seconds;
   if(WORK){
@@ -116,8 +116,11 @@ void displ_0(void){
   if(modeCell>1){
     if(modeCell==2) GUI_WriteString(80, Y_str, "¬ŒÀŒ√»… ƒ¿“◊» ", Font_11x18, YELLOW, fillScreen);
     else if(modeCell==3){
-      if(errors & 0x20) GUI_WriteString(30, Y_str, "ƒ»Ã Õ»«‹ Œ⁄ “≈Ãœ≈–¿“”–»", Font_11x18, YELLOW, RED);
-      else GUI_WriteString(110, Y_str, "ƒ¿“◊»  ƒ»Ã”", Font_11x18, YELLOW, fillScreen);
+      if(errors & 0x20){
+        if(set[T2]*10 > ds.pvT[2]) GUI_WriteString(30, Y_str, "ƒ»Ã Õ»«‹ Œ⁄ “≈Ãœ≈–¿“”–»", Font_11x18, YELLOW, RED);
+        else  GUI_WriteString(30, Y_str, "ƒ»Ã ¬»—Œ Œ⁄ “≈Ãœ≈–¿“”–»", Font_11x18, YELLOW, RED);
+      }
+      else GUI_WriteString(30, Y_str, "       ƒ¿“◊»  ƒ»Ã”     ", Font_11x18, YELLOW, fillScreen);
     }
     Y_str = Y_str+18+10; // 248
     
@@ -132,7 +135,7 @@ void displ_0(void){
   if(VENTIL){
     if(errors & 0x80) GUI_WriteString(30, Y_str, "  Õ≈ œ–¿÷ﬁ› ¬≈Õ“»Àﬂ“Œ–  ", Font_11x18, YELLOW, RED);
     else {
-      sprintf(buffTFT,"%12s: %4i Ó·/ı‚Î.", setName[5], speedData[set[5]][0]);
+      sprintf(buffTFT,"%12s: %4i Ó·/ı‚Î.", setName[VENT], speedData[set[VENT]][0]);
       GUI_WriteString(10, Y_str, buffTFT, Font_11x18, YELLOW, fillScreen);
       }
   }
@@ -153,7 +156,7 @@ void displ_1(void){
  uint8_t i, bit, top;
  char txt[10];
  uint16_t color_txt, color_box; 
-    Y_str = Y_top;
+    Y_str = Y_top+10;
     if(NEWBUTT){ NEWBUTT = OFF; 
       GUI_Clear(fillScreen);
       GUI_WriteString(X_left+60, Y_str,"—“¿Õ ¬»’Œƒ€¬",Font_11x18,YELLOW,fillScreen);
@@ -198,9 +201,10 @@ void displ_1(void){
 
 //--------- Õ¿À¿ÿ“”¬¿ÕÕﬂ ----------------------------------
 void displ_2(void){
+  char txt[12];
   int8_t i;
   uint16_t color_txt, color_box;
-
+  float flSet;
   Y_str = Y_top; X_left = 5;
   if(NEWBUTT){ NEWBUTT = OFF;
     GUI_Clear(fillScreen);
@@ -213,13 +217,22 @@ void displ_2(void){
   Y_str = Y_str+10;
   for (i=-1; i<MAX_SET; i++){
     if(i==-1) sprintf(buffTFT,"       –≈∆»Ã: %8s", modeName[modeCell]);
-    else if(i==3) sprintf(buffTFT,"%12s: %i„Ó‰.%02iı‚Î.", setName[i], set[i]/60, set[i]%60);
-    else if(i==5) sprintf(buffTFT,"%12s: %4i Ó·/ı‚Î.", setName[i], speedData[set[i]][0]);
-    else if(i==6) sprintf(buffTFT,"%12s:", setName[i]);
+    else if(i==3) sprintf(buffTFT,"%12s: %i„Ó‰.%02iı‚Î.", setName[i], set[i]/60, set[i]%60);  // "“–»¬¿ÀI—“‹"
+    else if(i==4) sprintf(buffTFT,"%12s: %4i Ó·/ı‚Î.", setName[i], speedData[set[i]][0]);     // "ÿ¬»ƒ I—“‹"
+    else if(i==5 || i==6){
+      if(set[i]){
+        // ÂÒÎË ¬¿– ¿ (modeCell==2) Á‡‰‡ÂÚÒˇ ‚ mÒÂÍ.[ÓÚ 0.1ÒÂÍ. ‰Ó 10 ÒÂÍ.] (ÔÂËÓ‰ 10 mÒÂÍ.)
+        if(modeCell==2) flSet = (float)set[i]/10; else flSet = set[i];
+        sprintf(buffTFT,"%12s: %2.1fÒÂÍ.", setName[i], flSet);                                   // "“¿…Ã.ON","“¿…Ã.OFF" 
+      }
+      else sprintf(buffTFT,"%12s:", "ÌÂ Á‡‰‡ÌËÈ");
+    }
+    else if(i==7) sprintf(buffTFT,"%12s:", setName[i]);                                       // "IÕÿ≈"
     else {
       if(set[i]){
-        sprintf(buffTFT,"%12s: %3i", setName[i], set[i]);
-        if(i==4) strcat(buffTFT,"ÒÂÍ."); else strcat(buffTFT,"$ ");
+        if(modeCell==3 && i==2) sprintf(txt,"%12s",relayName[5]);// " Œœ◊≈ÕÕﬂ"
+        else sprintf(txt,"%12s",setName[i]);
+        sprintf(buffTFT,"%12s: %3i$ ", txt, set[i]); 
       } 
       else sprintf(buffTFT,"%12s:", "ÌÂ Á‡‰‡ÌËÈ");
     }
@@ -284,7 +297,6 @@ void displ_4(void){
 void displ_5(void){
   uint8_t i;
   uint16_t color_txt, color_box;
-  float flSet;
   Y_str = Y_top; X_left = 5;
   if(NEWBUTT){ NEWBUTT = OFF;
     GUI_Clear(fillScreen);
@@ -296,16 +308,11 @@ void displ_5(void){
   }
   Y_str = Y_str+10;
   for (i=0; i<MAX_OTHER; i++){
-    sprintf(buffTFT,"%10s", otherName[i]);
-    if(i<2){
-      // ÂÒÎË ¬¿– ¿ (modeCell==2) Á‡‰‡ÂÚÒˇ ‚ mÒÂÍ.[ÓÚ 0.1ÒÂÍ. ‰Ó 10 ÒÂÍ.] (ÔÂËÓ‰ 10 mÒÂÍ.)
-      if(modeCell==2) flSet = (float)set[i+MAX_SET-1]/10; else flSet = set[i+MAX_SET-1];
-      sprintf(buffTFT,"%12s:%2.1fÒÂÍ.", otherName[i], flSet); // "“¿…Ã.ON","“¿…Ã.OFF"
-    }
-    else if(i==2) sprintf(buffTFT,"%12s:%3i$", otherName[i], set[i+MAX_SET-1]); // "¿¬¿–»ﬂ"
-    else if(i==3) sprintf(buffTFT,"%12s:%2.1f$", otherName[i], (float)set[i+MAX_SET-1]/10); // "√»—“≈–≈«"
-    else if(i<6) sprintf(buffTFT,"%12s:%3i", otherName[i], set[i+MAX_SET-1]); // "Œ’ŒÀŒƒ∆.","Œ—”ÿ≈ÕÕﬂ"
-    else sprintf(buffTFT,"%12s:%4i", otherName[i], dataRAM.config.koff[i-6]); // "Prop","Integ"
+    if(i==0) sprintf(buffTFT,"%12s: %3iÒÂÍ.", otherName[i], set[i+MAX_SET-1]);   // "œ–Œƒ”¬¿ÕÕﬂ"
+    else if(i==1) sprintf(buffTFT,"%12s: %3i$", otherName[i], set[i+MAX_SET-1]); // "¿¬¿–»ﬂ"
+    else if(i==2) sprintf(buffTFT,"%12s: %2.1f$", otherName[i], (float)set[i+MAX_SET-1]/10); // "√»—“≈–≈«"
+    else if(i<5) sprintf(buffTFT,"%12s: %3i", otherName[i], set[i+MAX_SET-1]); // "Œ’ŒÀŒƒ∆.","Œ—”ÿ≈ÕÕﬂ"
+    else sprintf(buffTFT,"%12s: %3i", otherName[i], dataRAM.config.koff[i-5]); // "Prop","Integ"
     if(i == numSet){color_txt = BLACK; color_box = WHITE;} else {color_txt = WHITE; color_box = BLACK;}
     GUI_WriteString(X_left, Y_str, buffTFT, Font_11x18, color_txt, color_box);
     Y_str = Y_str+18+5;
@@ -314,7 +321,6 @@ void displ_5(void){
 
 //--------- «Ã≤Õ¿ IÕÿ≈ ----------------------------------
 void displ_6(void){
-  float flSet;
   Y_str = Y_top; X_left = 5;
   if(NEWBUTT){ NEWBUTT = OFF;
     GUI_Clear(fillScreen);
@@ -332,19 +338,13 @@ void displ_6(void){
   sprintf(buffTFT,"%12s:", otherName[numSet]);
   GUI_WriteString(X_left+20, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
 
-  if(numSet<2){
-    // ÂÒÎË ¬¿– ¿ (modeCell==2) Á‡‰‡ÂÚÒˇ ‚ mÒÂÍ.[ÓÚ 0.1ÒÂÍ. ‰Ó 10 ÒÂÍ.] (ÔÂËÓ‰ 10 mÒÂÍ.)
-    if(modeCell==2) flSet = (float)newval[numSet]/10; else flSet = newval[numSet];
-    sprintf(buffTFT,"%2.1fÒÂÍ.", flSet); // "“¿…Ã.ON","“¿…Ã.OFF"
-  }
-  else if(numSet==2) sprintf(buffTFT,"%3i$", newval[numSet]); // "¿¬¿–»ﬂ"
-  else if(numSet==3) sprintf(buffTFT,"%1.1f$", (float)newval[numSet]/10); // "√»—“≈–≈«"
-  else sprintf(buffTFT,"%4i", newval[numSet]); // "Œ’ŒÀŒƒ∆.","Œ—”ÿ≈ÕÕﬂ","Prop","Integ"
-  if(numSet<2) GUI_WriteString(X_left+180, Y_str, buffTFT, Font_11x18, WHITE, BLACK); // "“¿…Ã.ON","“¿…Ã.OFF"
-  else {
-    Y_str = Y_str-4;
-    GUI_WriteString(X_left+180, Y_str, buffTFT, Font_16x26, WHITE, BLACK);
-  }
+  if(numSet==0) sprintf(buffTFT,"%3icek.", newval[numSet]);           // "œ–Œƒ”¬¿ÕÕﬂ"
+  else if(numSet==1) sprintf(buffTFT,"%3i$", newval[numSet]);         // "¿¬¿–»ﬂ"
+  else if(numSet==2) sprintf(buffTFT,"%1.1f$", (float)newval[numSet]/10); // "√»—“≈–≈«"
+  else sprintf(buffTFT,"%4i", newval[numSet]);                        // "Œ’ŒÀŒƒ∆.","Œ—”ÿ≈ÕÕﬂ","Prop","Integ"
+
+  Y_str = Y_str-4;
+  GUI_WriteString(X_left+180, Y_str, buffTFT, Font_16x26, WHITE, BLACK);
 }
 
 //--------- ‚Ë·≥ ÿ¬»ƒ ≤—“≤ Ó·ÂÚ‡ÌÌˇ ----------------------------------

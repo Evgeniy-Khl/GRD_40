@@ -79,8 +79,8 @@ void Error_Handler(void);
 #define TOUCHMODE   0           // 0 или 1
 #define MAX_SENSOR  4
 #define MAX_MODE    4
-#define MAX_SET     7
-#define MAX_OTHER   8
+#define MAX_SET     8
+#define MAX_OTHER   7
 #define MAX_SPEED   8
 #define ON          1
 #define OFF         0
@@ -90,16 +90,24 @@ void Error_Handler(void);
 #define T1    1 // Уставка T2 грд. 
 #define T2    2 // Уставка T3 грд. 
 #define TMR0  3 // Длительность режима мин.
-#define TMR1  4 // Длительность продувки сек.
-#define VENT  5 // Скорость вентилятора %
-#define TMON  6 // Таймер ON сек.
-#define TMOFF 7 // Таймер OFF сек.
+#define VENT  4 // Скорость вентилятора %
+#define TMON  5 // Таймер ON сек.
+#define TMOFF 6 // Таймер OFF сек.
+#define TMR1  7 // Длительность продувки сек.
 #define ALRM  8 // Авария грд.
 #define HIST  9 // Гистерезис грд/10
 
-#define CHKSMOKE  1500 // (25 мин.) отжидание проверки температуры дыма в сек.
+#define MANUAL_CHECK
+
+#ifdef MANUAL_CHECK
+  #define CHKSMOKE  180 // (3 мин.) отжидание проверки температуры дыма в сек.
+#else
+  #define CHKSMOKE  1500 // (25 мин.) отжидание проверки температуры дыма в сек.
+#endif
 #define BEGINCOOL 400 // температура 40 грд. выше которой ЗАПРЕЩЕНО включение охлаждения
 #define BEGINHUM  400 // запрет увлажнения при температуре ниже 40 грд.
+
+
 /* ---структура с битовыми полями -----*/
 struct byte {
     unsigned a0: 1;

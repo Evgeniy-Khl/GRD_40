@@ -67,8 +67,8 @@ RTC_DateTypeDef sDate;
 
 char buffTFT[40];
 const char* modeName[4]={"СУШЫННЯ","ОБЖАРКА","ВАРЫННЯ","КОПЧЕННЯ"};
-const char* setName[MAX_SET]={"t КАМЕРИ","t ПРОДУКТА","t ВОЛОГОСТЫ","ТРИВАЛЫСТЬ","ПРОДУВАННЯ","ШВИДКЫСТЬ","ЫНШЕ"};
-const char* otherName[MAX_OTHER]={"ТАЙМ.ON","ТАЙМ.OFF","АВАРЫЯ","ГЫСТЕРЕЗ","ОХОЛОДЖ.","ОСУШЕННЯ","Prop","Integ"};
+const char* setName[MAX_SET]={"t КАМЕРИ","t ПРОДУКТА","t ВОЛОГОСТЫ","ТРИВАЛЫСТЬ","ШВИДКЫСТЬ","ТАЙМ.ON","ТАЙМ.OFF","ЫНШЕ"};
+const char* otherName[MAX_OTHER]={"ПРОДУВАННЯ","АВАРЫЯ","ГЫСТЕРЕЗ","ОХОЛОДЖ.","ОСУШЕННЯ","Prop","Integ"};
 const char* relayName[6]={"ПЫД","НАГРЫВ","ТАЙМЕР","ВОЛОГА","ЕЛЕКТРО","t ДИМА"};
 const char* analogName[2]={"ВЕНТИЛ.","ЫНШЕ"};
 //        2.00V        3.15V        4.30V        5.45V        6.60V        7.75V        8.90V        10.00V
@@ -217,9 +217,12 @@ int main(void)
   HAL_RTCEx_SetSecond_IT(&hrtc);          /* ------  таймер 1Гц.  период  1 сек.    ----*/
   HAL_TIM_Base_Start_IT(&htim1);          /* ------  таймер 100Гц.  период  10 мс.  ----*/
   
-  HAL_Delay(3000);
+  HAL_Delay(2000);
   NEWBUTT = ON;
-//  ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=20; //???????????????????????????????????????????????????????????????
+  #ifdef MANUAL_CHECK
+  ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=150; //???????????????????????????????????????????????????????????????
+  int8_t dpv0 = 2, dpv1 = 2, dpv2 = 2;
+  #endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -251,7 +254,9 @@ int main(void)
     //-------------- Начало проверки каждую 1 сек. -----------------------
     if(CHECK){ CHECK = OFF; errors=0;  //if(++temp>10) {temp=0; ++pvspeed; pvspeed&=7; ds.pvT[1] = speedData[pvspeed][0]; sendToI2c(speedData[pvspeed][1]);}
       if(resetDispl) --resetDispl; else if(displ_num){displ_num = 0; NEWBUTT = 1;}  // возврат к главному дисплею
+    #ifndef MANUAL_CHECK
       temperature_check();
+    #endif
       //---------------------------------- Проверка работы вентилятора -------------------------------------
       if(VENTIL){
         if(HAL_GPIO_ReadPin(Input0_GPIO_Port, Input0_Pin) == GPIO_PIN_RESET) {SPEED=ON; tmrVent=0;} // если контакт замкнут
@@ -263,22 +268,33 @@ int main(void)
       //------------------------------------------- В РАБОТЕ -----------------------------------------------
       if(WORK){
         TIMER=ON;
-//        //??????????????????????
-//        int16_t pverr = abs(set[T0]*10 - ds.pvT[0]);
-//        int8_t pv = 0;
-//        if(pverr>50) pv = 5;
-//        else if(abs(pverr)>20) pv = 2;
-//        else pv = 1;
-//        if(HEATER) {ds.pvT[0]+=pv; ds.pvT[1]+=pv; ds.pvT[2]+=pv;}  //???????????????????????????????????????????
-//        else {ds.pvT[0]-=pv; ds.pvT[1]-=pv; ds.pvT[2]-=pv;}  //???????????????????????????????????????????
-//        //??????????????????????
-        
+    #ifdef MANUAL_CHECK
+        //??????????????????????
+        int16_t pverr = set[T0]*10 - ds.pvT[0];
+        if(pverr>50) dpv0 = 5;
+        else if(pverr>5) dpv0 = 1;
+        else if(pverr<-2) dpv0 = -1;
+        ds.pvT[0]+=dpv0;
+        //------------
+        pverr = set[T1]*10 - ds.pvT[1];
+        if(pverr>50) dpv1 = 5;
+        else if(pverr>2) dpv1 = 1;
+        else if(pverr<-2) dpv1 = -1;
+        ds.pvT[1]+=dpv1;
+        //------------
+        pverr = set[T2]*10 - ds.pvT[2];
+        if(pverr>50) dpv2 = 5;
+        else if(pverr>25) dpv2 = 1;
+        else if(pverr<-25) dpv2 = -1;
+        ds.pvT[2]+=dpv2;
+        //??????????????????????
+    #endif
         i16 = set[T0]*10 - ds.pvT[0];         // величина ошибки регулирования датчика 0
-        if(abs(i16)<set[HIST]) PERFECT=ON;     // Выщли на заданную температуру
+        if(abs(i16)<set[HIST]) PERFECT=ON;    // Выщли на заданную температуру
         u16 = set[HIST]*4;                    // HIST = 0.5 * 4 = 2.0 грд. Ц. цветовая индикация
-        if(u16>=set[ALRM]) u16 = set[ALRM]/2; // тогда привяжем к аварии
+        if(u16>=set[ALRM]*10) u16 = set[ALRM]*10/2; // тогда привяжем к аварии
         //--- кстанавливаем point_color в соответсвии с отклонением
-        if(i16+set[ALRM]*10<0) {errors|=0x04; point_color = RED;} // ПЕРЕГРЕВ В КАМЕРЕ
+        if(i16+set[ALRM]*10<0) {errors|=0x04; point_color = RED;} // ПЕРЕГРЕВ В КАМЕРЕ ???????????
         else if(i16>-u16 && i16<u16) point_color = GREEN; // норма
         else if(i16<-u16){                    // ВЫЩЕ нормы
           point_color = MAGENTA;
@@ -290,7 +306,7 @@ int main(void)
         }
         
         i16 = set[T1]*10 - ds.pvT[1];    // величина ошибки регулирования датчика 1
-        if(i16+set[ALRM]*10<0) {errors|=0x08;} // ПЕРЕГРЕВ В ПРОДУКТЕ
+        if(i16+set[ALRM]*10<0) {errors|=0x08;} // ПЕРЕГРЕВ В ПРОДУКТЕ ????????????????????????????????
         // ---------------------------------------- НАГРЕВАТЕЛЬ / ОХЛАДИТЕЛЬ -------------------------------------
         //------ работает как нагреватель
         if(ds.pvT[0]<1999 && ds.pvT[0]>1){
@@ -319,23 +335,23 @@ int main(void)
         //-------------------------- Только для режима КОПЧЕНИЯ ---------------------------------
         if(modeCell==3){
           ELECTRO = ignition(ELECTRO);
-//          if(tmrCounter==-1){ // включается только после окончания розжига
-            i16 = set[T2]*10 - ds.pvT[2];     // величина ошибки регулирования датчика 2 (Дым)
-            if(i16-set[ALRM]*2>0){            // ( ниже 2 грд.Ц) ДЫМ НИЗКОЙ ТЕМПЕРАТУРЫ
-              if(++checkSmoke>CHKSMOKE) {checkSmoke=CHKSMOKE; errors|=0x20;} 
-//            }
-            u16 = Relay(i16, set[HIST]);  // величина ошибки температуры дыма
-            switch (u16){
-              case ON:  SMOKE = ON;  break;
-              case OFF: SMOKE = OFF; break;
-            }
+          i16 = set[T2]*10 - ds.pvT[2];     // величина ошибки регулирования датчика 2 (Дым)
+          if(++checkSmoke>CHKSMOKE){       // (відхилення 2 грд.Ц) ТЕМПЕРАТУРЫ ДЫМА
+            checkSmoke=CHKSMOKE;
+            if(abs(i16)-set[ALRM]*10>0) errors|=0x20;
+          }
+          u16 = Relay(i16, set[HIST]);  // величина ошибки температуры дыма
+          switch (u16){
+            case ON:  SMOKE = ON;  break;
+            case OFF: SMOKE = OFF; break;
           }
         }
-        
-        u16 = sTime.Hours*60 + sTime.Minutes;         // всего в минутах
-        i16 = (set[TMR0] - u16)*60 - sTime.Seconds;   // осталось до выключения в секундах
-        if(i16<30) ticBeep = 5;                      // включить сигнал
-        
+        //---------------------------------------------------------------------------------------
+        if(set[TMR0]>30){
+          u16 = sTime.Hours*60 + sTime.Minutes;         // всего в минутах
+          i16 = (set[TMR0] - u16)*60 - sTime.Seconds;   // осталось до выключения в секундах
+          if(i16<30) ticBeep = 5;                      // включить сигнал
+        }
         if(ds18b20_amount==1 && set[TMR0]==0){      // если 1 датчик и продолжительность 0 то завершение по температуре камеры.          
           i16 = Relay(set[T0]*10 - ds.pvT[0], 0);   // температура камеры
           if(i16==OFF){
@@ -361,7 +377,7 @@ int main(void)
             HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
         }
         
-      } //------------------------------------ В РАБОТЕ -----------------------------------------------
+      } //--------------------------- КОНЕЦ в работе -----------------------------------------------
       else if(PURGING){
         u16 = sTime.Minutes*60+sTime.Seconds;           // всего в секундах
         if(u16>=set[TMR1]) {PURGING=OFF; sendToI2c(0); NEWBUTT=ON; ticBeep=200;}
@@ -384,7 +400,7 @@ int main(void)
           case 0x04: ticBeep =120; break;// ПЕРЕГРЫВ В КАМЕРI
           case 0x08: ticBeep =120; break;// ПЕРЕГРЫВ В ПРОДУКТI
           case 0x10: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ В КАМЕРI
-          case 0x20: ticBeep = 20; break;// ДИМ НИЗЬКОЪ ТЕМПЕРАТУРИ
+          case 0x20: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ ДИМA
           case 0x40: ticBeep = 60; break;//
           case 0x80: ticBeep = 60; break;// НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
           default: ticBeep =200; break;

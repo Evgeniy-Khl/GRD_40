@@ -65,7 +65,7 @@ uint8_t ignition(uint8_t value){
         if(tmrCounter) tmrCounter--; else {value=OFF; tmrCounter=-1;}         // Больше не включается
     }
     else {
-        if(tmrCounter) tmrCounter--; else {value=ON; tmrCounter=set[TMON];}   // Длительность розжига
+        if(tmrCounter) tmrCounter--; else {value=ON; tmrCounter=set[TMON];}   // Длительность розжига 180сек.
     }
   }
   else value=OFF;
