@@ -74,6 +74,8 @@ void Error_Handler(void);
 #define TFT_CS_GPIO_Port GPIOA
 #define Beep_Pin GPIO_PIN_6
 #define Beep_GPIO_Port GPIOB
+#define Input1_Pin GPIO_PIN_7
+#define Input1_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 #define DIAGONAL    28          // 24 -> дл€ дисплеев 2,4"; 28 -> дл€ дисплеев 2,8"; 32 -> дл€ дисплеев 3,2"
 #define TOUCHMODE   0           // 0 или 1
@@ -147,7 +149,7 @@ extern struct Ds ds;
 #define HUMIDI	relayOut.bitfield.a3  // ”¬Ћј∆Ќ»“≈Ћ№
 #define ELECTRO	relayOut.bitfield.a4  // Ёлектроподжиг
 #define SMOKE   relayOut.bitfield.a5  //  лапан дыма
-#define OTHER1	relayOut.bitfield.a6  // прочее 1
+#define WATER 	relayOut.bitfield.a6  //  лапан воды
 #define ALARM   relayOut.bitfield.a7  // “ревога
 
 extern union Byte portFlag;

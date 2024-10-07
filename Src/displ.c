@@ -153,7 +153,7 @@ void displ_0(void){
 
 //-------------------------------- СТАН ВЫХОДІВ ------------------------------------------------------
 void displ_1(void){
- uint8_t i, bit, top;
+ uint8_t i, bit;
  char txt[10];
  uint16_t color_txt, color_box; 
     Y_str = Y_top+10;
@@ -167,13 +167,8 @@ void displ_1(void){
       drawButton(CYAN, 3, "-");
     }
 //---- РЕЛЕЙНЫЕ ВЫХОДЫ ----
-    switch (modeCell){
-    	case 3: top=6; break;
-    	case 2: top=4; break;
-    	default: top=3;	break;
-    }
     Y_str = Y_str+18+5;
-    for (i=0;i<top;i++){
+    for (i=0;i<7;i++){
         bit = 1<<i;
         sprintf(buffTFT,"%7s",relayName[i]);
         sprintf(txt," N%u: ",i+1);
@@ -185,18 +180,15 @@ void displ_1(void){
         GUI_FillRectangle(X_left+200,Y_str,30,18,color_box);
         Y_str = Y_str+18+5;
     }
-//---- АНАЛОГОВЫЕ ВЫХОДЫ ----
-//    for (i=0;i<2;i++){
-//        sprintf(buffTFT,"%7s",analogName[i]);
-//        sprintf(txt," U%u: ",i+1);
-//        strcat(buffTFT,txt);
-//        if(analogSet[i]<0) strcat(buffTFT,"AUTO"); else {strcat(buffTFT,"SET:"); analogOut[i]=analogSet[i];}
-//        sprintf(txt," %3u%% ",analogOut[i]);
-//        strcat(buffTFT,txt);
-//        if(i+6 == numSet){color_txt = BLACK; color_box = WHITE;} else {color_txt = WHITE; color_box = BLACK;}
-//        GUI_WriteString(X_left+10,Y_str, buffTFT, Font_11x18, color_txt, color_box);
-//        Y_str = Y_str+18+5;    
-//    }
+//---- ВХОДЫ ----
+    Y_str = Y_str+18+5;
+    GUI_WriteString(X_left+40,Y_str, "ВХЫД N1:", Font_11x18, WHITE, BLACK);
+    if(HAL_GPIO_ReadPin(Input0_GPIO_Port, Input0_Pin) == GPIO_PIN_RESET) color_box=YELLOW; else color_box=GRAY; // напряжение подано
+    GUI_FillRectangle(X_left+150,Y_str,30,18,color_box);
+    Y_str = Y_str+18+5;
+    GUI_WriteString(X_left+40,Y_str, "ВХЫД N2:", Font_11x18, WHITE, BLACK);
+    if(HAL_GPIO_ReadPin(Input1_GPIO_Port, Input1_Pin) == GPIO_PIN_RESET) color_box=YELLOW; else color_box=GRAY; // напряжение подано
+    GUI_FillRectangle(X_left+150,Y_str,30,18,color_box);
 }
 
 //--------- НАЛАШТУВАННЯ ----------------------------------
@@ -223,18 +215,18 @@ void displ_2(void){
       if(set[i]){
         // если ВАРКА (modeCell==2) задается в mсек.[от 0.1сек. до 10 сек.] (период 10 mсек.)
         if(modeCell==2) flSet = (float)set[i]/10; else flSet = set[i];
-        sprintf(buffTFT,"%12s: %2.1fсек.", setName[i], flSet);                                   // "ТАЙМ.ON","ТАЙМ.OFF" 
+        sprintf(buffTFT,"%12s: %2.1fсек.", setName[i], flSet);                                // "ТАЙМ.ON","ТАЙМ.OFF" 
       }
-      else sprintf(buffTFT,"%12s:", "не заданий");
+      else sprintf(buffTFT,"%12s:", "-----");
     }
     else if(i==7) sprintf(buffTFT,"%12s:", setName[i]);                                       // "IНШЕ"
-    else {
+    else {                                                                                    // "t КАМЕРИ","t ПРОДУКТА","t ДИМА"
       if(set[i]){
-        if(modeCell==3 && i==2) sprintf(txt,"%12s",relayName[5]);// "КОПЧЕННЯ"
+        if(modeCell==2 && i==2) {strcpy(txt,"t ВОЛОГОГО");}// "ВАРIННЯ"
         else sprintf(txt,"%12s",setName[i]);
         sprintf(buffTFT,"%12s: %3i$ ", txt, set[i]); 
       } 
-      else sprintf(buffTFT,"%12s:", "не заданий");
+      else sprintf(buffTFT,"%12s:", "-----");
     }
     if(i == numSet){color_txt = BLACK; color_box = WHITE;} else {color_txt = WHITE; color_box = BLACK;}
     GUI_WriteString(X_left, Y_str, buffTFT, Font_11x18, color_txt, color_box);
@@ -284,12 +276,16 @@ void displ_4(void){
     drawButton(GREEN, 2, "^");
     drawButton(YELLOW, 3, "Вибыр");
   }
-  Y_str = Y_str+10;
-  for (i=0; i<MAX_MODE; i++){
-    sprintf(buffTFT,"%10s", modeName[i]);
-    if(i == newval[0]){color_txt = BLACK; color_box = WHITE;} else {color_txt = WHITE; color_box = BLACK;}
-    GUI_WriteString(X_left, Y_str, buffTFT, Font_11x18, color_txt, color_box);
-    Y_str = Y_str+18+5;
+  if(newval[1]!=newval[0]){
+    newval[1] = newval[0];
+    Y_str = Y_str+50;
+    for (i=0; i<MAX_MODE; i++){
+      sprintf(buffTFT,"%8s", modeName[i]);
+      if(i == newval[0]){color_txt = BLACK; color_box = GREEN;} else {color_txt = WHITE; color_box = GRAY;}
+      GUI_FillRectangle(lcddev.width/2-70, Y_str-20, 140, 60, color_box);
+      GUI_WriteString(lcddev.width/2-50, Y_str, buffTFT, Font_11x18, color_txt, color_box);
+      Y_str = Y_str+60+5;
+    }
   }
 }
 

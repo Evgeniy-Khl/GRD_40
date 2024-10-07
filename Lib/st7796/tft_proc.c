@@ -140,7 +140,6 @@ void down_relay(){
 }
 
 void checkButtons(uint8_t item){
-  uint8_t top;
     switch (displ_num){
       case 0://--------- —“¿Õ  ¿Ã≈–» -----------------------
         switch (item){
@@ -151,14 +150,9 @@ void checkButtons(uint8_t item){
         item = 10;
         break;
       case 1://--------- —“¿Õ ¬€’Œƒ≤¬ ----------------------------------
-        switch (modeCell){
-          case 3: top=5; break;
-          case 2: top=3; break;
-          default: top=2;	break;
-        }
         switch (item){
           case 0: displ_num = 0; NEWBUTT = 1; break;
-          case 1: if(++numSet>top) numSet=0; break;
+          case 1: if(++numSet>6) numSet=0; break;
           case 2: up_relay(); break;
           case 3: down_relay(); break;
         }
@@ -173,7 +167,7 @@ void checkButtons(uint8_t item){
                   if(numSet==4) {numSet=set[VENT]; displ_num=7;}                    // ‚Ë·≥ ÿ¬»ƒ ≤—“≤ Ó·ÂÚ‡ÌÌˇ
                   else if(numSet==7) {numSet=0; newval[0]=0; displ_num=5;}          // IÕÿ≈
                   else if(numSet>=0) {newval[numSet] = set[numSet]; displ_num = 3;} // «Ã≤Õ¿ “≈Ãœ≈–¿“”– 
-                  else {newval[0] = modeCell; displ_num = 4;}                       // «Ã≤Õ¿ –≈∆»Ã”
+                  else {newval[0] = modeCell; newval[1]=10; displ_num = 4;}         // «Ã≤Õ¿ –≈∆»Ã”
                   NEWBUTT = 1; break;
         }
         item = 10;
