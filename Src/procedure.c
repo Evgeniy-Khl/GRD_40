@@ -44,7 +44,7 @@ uint8_t Relay(int16_t err, uint8_t hst) // [n] канал № 1 или 2
 
 uint8_t humidifier(uint8_t value){
   if(set[TMON]==0 || set[TMOFF]==0){                                            // если TMON или TMOFF равно 0 то вкючение увлажнителя по датчику.
-    if(ds18b20_amount==3) value = Relay((int)set[T2]*10 - ds.pvT[2], set[HIST]);// третий датчик - датчик влажности
+    if(ds18b20_amount==3) value = Relay((int)set[T3]*10 - ds.pvT[3], set[HIST]);// третий датчик - датчик влажности
 //    else if(AM2301) value = Relay((int)set[T2] - pvRH, set[HIST]);              // DHT-21 - датчик влажности
   }
   else {

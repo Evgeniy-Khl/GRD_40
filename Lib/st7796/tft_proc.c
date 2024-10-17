@@ -163,11 +163,18 @@ void checkButtons(uint8_t item){
           case 0: displ_num = 0; NEWBUTT = 1; break;
           case 1: if (++numSet>MAX_SET-1) numSet = -1;	break;
           case 2: if (--numSet<-1) numSet = MAX_SET-1;	break;
-          case 3: oldNumSet = numSet;
-                  if(numSet==4) {numSet=set[VENT]; displ_num=7;}                    // вибір ШВИДКІСТІ обертання
-                  else if(numSet==7) {numSet=0; newval[0]=0; displ_num=5;}          // IНШЕ
-                  else if(numSet>=0) {newval[numSet] = set[numSet]; displ_num = 3;} // ЗМІНА ТЕМПЕРАТУР 
-                  else {newval[0] = modeCell; newval[1]=10; displ_num = 4;}         // ЗМІНА РЕЖИМУ
+          case 3: oldNumSet = numSet; displ_num=3;
+                  if(numSet==0 || numSet==1) newval[numSet]=set[numSet];    // ЗМІНА ТЕМПЕРАТУР
+                  else if(numSet==2){
+                    if(modeCell==3) newval[numSet]=set[T2];                 // ЗМІНА ТЕМПЕРАТУРИ Дима
+                    else if(modeCell==2) newval[numSet]=set[T3];            // ЗМІНА ТЕМПЕРАТУРИ Вологого
+                  }
+                  else if(numSet==3) newval[numSet]=set[TMR0];              // "ТРИВАЛЫСТЬ"
+                  else if(numSet==4){numSet=set[VENT]; displ_num=7;}        // вибір ШВИДКІСТІ обертання
+                  else if(numSet==5) newval[numSet]=set[TMON];              // "ТАЙМ.ON"
+                  else if(numSet==6) newval[numSet]=set[TMOFF];             // "ТАЙМ.OFF"
+                  else if(numSet==7){numSet=0; newval[0]=0; displ_num=5;}   // IНШЕ
+                  else {newval[0] = modeCell; newval[1]=10; displ_num = 4;} // ЗМІНА РЕЖИМУ
                   NEWBUTT = 1; break;
         }
         item = 10;
@@ -176,7 +183,7 @@ void checkButtons(uint8_t item){
         if(numSet<3){maxVal=110, minVal=18;} // T0,T1,T2 грд
         else if(numSet==3){maxVal=1440, minVal=0;}// Длительность режима мин.
         else if(numSet==5 || numSet==6){
-          // если ВАРКА (modeCell==2) задается в mсек.[от 0.1сек. до 10 сек.] (период 10 mсек.)
+          // если ВАРКА (modeCell=2) задается в mсек.[от 0.1сек. до 10 сек.] (период 10 mсек.)
           if(modeCell==2){maxVal=100, minVal=1;} else {maxVal=500, minVal=0;}// Таймер ON/OFF
         }
         switch (item){
@@ -202,7 +209,14 @@ void checkButtons(uint8_t item){
           case 3: 
             GUI_FillRectangle(0, Y_top, lcddev.width, lcddev.height, fillScreen);
             GUI_WriteString(lcddev.width/2-90,lcddev.height/2-60, "ВИКОНАЮ ЗАПИС!", Font_11x18, GREEN, BLACK);
-            set[numSet] = newval[numSet];     // установим новые значения
+            if(numSet==2){
+              if(modeCell==3) set[T2] = newval[numSet];     // температура (Дым)
+              if(modeCell==2) set[T3] = newval[numSet];     // температура (Влажный)
+            }
+            else if(numSet==3) set[TMR0] = newval[numSet];  // Длительность режима
+            else if(numSet==5) set[TMON] = newval[numSet];  // Таймер ON
+            else if(numSet==6) set[TMOFF] = newval[numSet]; // Таймер OFF
+            else set[numSet] = newval[numSet];     // температура T0, T1
             uint32_t er = writeData();        // запишем значения во FLASH
             if(er) GUI_WriteString(lcddev.width/2-40,lcddev.height/2-20, "ПОМИЛКА!", Font_11x18, YELLOW, RED);
             else GUI_WriteString(lcddev.width/2-10,lcddev.height/2+20, "OK", Font_11x18, GREEN, BLACK);
@@ -235,8 +249,8 @@ void checkButtons(uint8_t item){
           case 1: if (++numSet>MAX_OTHER-1) numSet = 0;	break;
           case 2: if (--numSet<0) numSet = MAX_OTHER-1;	break;
           case 3: 
-                  if(numSet<5) newval[numSet] = set[numSet+7];
-                  else newval[numSet] = dataRAM.config.koff[numSet-5];
+                  if(numSet<4) newval[numSet] = set[numSet+8];
+                  else newval[numSet] = dataRAM.config.koff[numSet-4];
 				  displ_num = 6; NEWBUTT = 1; break;
         }
         item = 10;
@@ -245,9 +259,9 @@ void checkButtons(uint8_t item){
         if(numSet==0){maxVal=1800, minVal=0;}// продувкa сек.
         else if(numSet==1){maxVal=50, minVal=1;}// Авария грд
         else if(numSet==2){maxVal=50, minVal=1;}// Гистерезис грд/10
-        else if(numSet==3||numSet==4){maxVal=1, minVal=0;}// // прямое/инвесное управление
-        else if(numSet==5){maxVal=50, minVal=1;}// пропорциональный
-        else if(numSet==6){maxVal=1000, minVal=100;}// интегральный
+        else if(numSet==3){maxVal=1, minVal=0;}// // прямое/инвесное управление
+        else if(numSet==4){maxVal=50, minVal=1;}// пропорциональный
+        else if(numSet==5){maxVal=1000, minVal=100;}// интегральный
         switch (item){
           case 0: displ_num = 5; NEWBUTT = 1; break;
           case 1: newval[numSet]+=1;	
@@ -271,8 +285,8 @@ void checkButtons(uint8_t item){
           case 3: 
             GUI_FillRectangle(0, Y_top, lcddev.width, lcddev.height, fillScreen);
             GUI_WriteString(lcddev.width/2-90,lcddev.height/2-60, "ВИКОНАЮ ЗАПИС!", Font_11x18, GREEN, BLACK);
-            if(numSet<5) set[numSet+7] = newval[numSet];     // установим новые значения
-            else dataRAM.config.koff[numSet-5] = newval[numSet];
+            if(numSet<4) set[numSet+8] = newval[numSet];     // установим новые значения
+            else dataRAM.config.koff[numSet-4] = newval[numSet];
             uint32_t er = writeData();        // запишем значения во FLASH
             if(er) GUI_WriteString(lcddev.width/2-40,lcddev.height/2-20, "ПОМИЛКА!", Font_11x18, YELLOW, RED);
             else GUI_WriteString(lcddev.width/2-10,lcddev.height/2+20, "OK", Font_11x18, GREEN, BLACK);

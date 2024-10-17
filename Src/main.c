@@ -61,7 +61,7 @@ RTC_DateTypeDef sDate;
 char buffTFT[40];
 const char* modeName[4]={"ÑÓØÛÍÍß","ÎÁÆÀÐÊÀ","ÂÀÐÛÍÍß","ÊÎÏ×ÅÍÍß"};
 const char* setName[MAX_SET]={"t ÊÀÌÅÐÈ","t ÏÐÎÄÓÊÒÀ","t ÄÈÌÀ","ÒÐÈÂÀËÛÑÒÜ","ØÂÈÄÊÛÑÒÜ","ÒÀÉÌ.ON","ÒÀÉÌ.OFF","ÛÍØÅ"};
-const char* otherName[MAX_OTHER]={"ÏÐÎÄÓÂÀÍÍß","ÀÂÀÐÛß","ÃÛÑÒÅÐÅÇ","ÎÕÎËÎÄÆ.","ÎÑÓØÅÍÍß","Prop","Integ"};
+const char* otherName[MAX_OTHER]={"ÏÐÎÄÓÂÀÍÍß","ÀÂÀÐÛß","ÃÛÑÒÅÐÅÇ","ÎÕÎËÎÄÆ.","Prop","Integ"};
 const char* relayName[7]={"ÏÛÄ","ÍÀÃÐÛÂ","ÒÀÉÌÅÐ","ÂÎËÎÃÀ","ÅËÅÊÒÐÎ","Êë.ÄÈÌÀ","Êë.ÂÎÄÈ"};
 //const char* analogName[2]={"ÂÅÍÒÈË.","ÛÍØÅ"};
 //        2.00V        3.15V        4.30V        5.45V        6.60V        7.75V        8.90V        10.00V
@@ -165,12 +165,12 @@ int main(void)
   GUI_Clear(fillScreen);
   if((lcddev.dir&1)==0) X_left = 20; else X_left = 100;
   GUI_WriteString(35, Y_str, "GRD Max", Font_16x26, WHITE, fillScreen);
-  GUI_WriteString(165, Y_str+5, " v 3.0", Font_11x18, WHITE, fillScreen);
+  GUI_WriteString(165, Y_str+5, " v 4.0", Font_11x18, WHITE, fillScreen);
   Y_str = Y_str+18+35;
   
   i16 = initData();
   ds18b20_port_init();      // ëèíèÿ 1-Wire
-  ds18b20_checkSensor(3);   // check DS18B20 sensors ?????????????????????????????????????
+  ds18b20_checkSensor(4);   // check DS18B20 sensors ?????????????????????????????????????
  
   switch (i16){
   	case 0: GUI_WriteString(5, Y_str, "Ûíûöûàëûçàöûÿ óñïûøíà.", Font_11x18, GREEN, BLACK);	break;
@@ -216,7 +216,7 @@ int main(void)
   HAL_Delay(2000);
   NEWBUTT = ON;
   #ifdef MANUAL_CHECK
-  ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=150;
+  ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=150; ds.pvT[3]=200;
   int8_t dpv0 = 2, dpv1 = 2, dpv2 = 2;
   #endif
   /* USER CODE END 2 */
@@ -285,6 +285,12 @@ int main(void)
         ds.pvT[1]+=dpv1;
         //------------
         pverr = set[T2]*10 - ds.pvT[2];
+        if(pverr>50) dpv2 = 5;
+        else if(pverr>25) dpv2 = 1;
+        else if(pverr<-25) dpv2 = -1;
+        ds.pvT[2]+=dpv2;
+        //------------
+        pverr = set[T3]*10 - ds.pvT[3];
         if(pverr>50) dpv2 = 5;
         else if(pverr>25) dpv2 = 1;
         else if(pverr<-25) dpv2 = -1;

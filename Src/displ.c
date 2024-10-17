@@ -34,7 +34,8 @@ int16_t max(int16_t a, int16_t b ) {
 
 //--------- нямнбмни щйпюм ----------------------
 void displ_0(void){
-  Y_str = Y_top+10;  // 0
+  uint8_t sensor;
+  Y_str = Y_top+15;  // 15
   const char* point[3] = {"  ","  ","  "};
   uint32_t curTime = sTime.Hours*3600 + sTime.Minutes*60 + sTime.Seconds;
   if(WORK){
@@ -64,7 +65,7 @@ void displ_0(void){
   GUI_WriteString(120, Y_str, "пефхл:", Font_11x18, YELLOW, fillScreen);
   sprintf(buffTFT,"%8s", modeName[modeCell]);
   GUI_WriteString(190, Y_str, buffTFT, Font_11x18, BLACK, WHITE);
-  Y_str = Y_str+26+10; //36
+  Y_str = Y_str+26+15; //56
   //----------------------------------------------------------------------------------------------
 //  sprintf(buffTFT,"%3u",checkSmoke);
 //  GUI_WriteString(3, Y_str, buffTFT, Font_11x18, YELLOW, fillScreen);
@@ -74,7 +75,7 @@ void displ_0(void){
   else if(errors & 0x04) GUI_WriteString(X_left, Y_str, "  оепецпшб б йюлепI   ", Font_11x18, YELLOW, RED);
   else if(errors & 0x10) GUI_WriteString(X_left, Y_str, "бшдушкеммъ релоепюрспх", Font_11x18, YELLOW, RED);
   else GUI_WriteString(X_left, Y_str, " релоепюрспю б йюлепI ", Font_11x18, YELLOW, fillScreen);
-  Y_str = Y_str+18+10; //64
+  Y_str = Y_str+18+15; //89
   
   GUI_WriteString(15, Y_str, point[0], Font_16x26, WHITE, BLACK); // ->
   
@@ -84,13 +85,13 @@ void displ_0(void){
   GUI_WriteString(55, Y_str, buffTFT, Font_16x26, point_color, BLACK);
   sprintf(buffTFT,"%3i.0$ ", set[T0]);
   GUI_WriteString(175, Y_str, buffTFT, Font_16x26, BLACK, WHITE);
-  Y_str = Y_str+26+10; //100
+  Y_str = Y_str+26+15; //130
   //-------------------------------------------------------------------------------------------------
   X_left = 35;
   if(errors & 0x02) GUI_WriteString(X_left, Y_str, "  онлхкйю дюрвхйю N2  ", Font_11x18, YELLOW, RED);
   else if(errors & 0x08) GUI_WriteString(X_left, Y_str, " оепецпшб б опндсйрI ", Font_11x18, YELLOW, RED);
   else GUI_WriteString(X_left, Y_str, "релоепюрспю б опндсйрI", Font_11x18, YELLOW, fillScreen);
-  Y_str = Y_str+18+10; // 128
+  Y_str = Y_str+18+15; // 128
   
   GUI_WriteString(15, Y_str, point[1], Font_16x26, WHITE, BLACK); // ->
   
@@ -100,50 +101,51 @@ void displ_0(void){
   GUI_WriteString(55, Y_str, buffTFT, Font_16x26, WHITE, BLACK);
   sprintf(buffTFT,"%3i.0$ ", set[T1]);
   GUI_WriteString(175, Y_str, buffTFT, Font_16x26, BLACK, WHITE);
-  Y_str = Y_str+26+10; // 164
+  Y_str = Y_str+26+15; // 171
   //-------------------------------------------------------------------------------------------
   X_left = 30;
   GUI_WriteString(X_left, Y_str, "   рпхбюкIярэ пефхлс   ", Font_11x18, YELLOW, fillScreen);
-  Y_str = Y_str+18+10; // 192
+  Y_str = Y_str+18+15; // 204
   if(WORK|PURGING){
     sprintf(buffTFT,"%2s %02u:%02u:%02u ", point[2], sTime.Hours, sTime.Minutes, sTime.Seconds);
     GUI_WriteString(15, Y_str, buffTFT, Font_11x18, YELLOW, fillScreen);
   }
   sprintf(buffTFT," %iЦНД.%02iУБК.", set[TMR0]/60, set[TMR0]%60);
   GUI_WriteString(165, Y_str, buffTFT, Font_11x18, BLACK, WHITE);
-  Y_str = Y_str+18+10;  // 220
+  Y_str = Y_str+18+15;  // 237
   
   if(modeCell>1){
-    if(modeCell==2) GUI_WriteString(80, Y_str, "бнкнцхи дюрвхй", Font_11x18, YELLOW, fillScreen);
+    if(modeCell==2) {sensor = T3; GUI_WriteString(80, Y_str, "бнкнцхи дюрвхй", Font_11x18, YELLOW, fillScreen);}
     else if(modeCell==3){
+      sensor = T2;
       if(errors & 0x20){
-        if(set[T2]*10 > ds.pvT[2]) GUI_WriteString(30, Y_str, "дхл мхгэйнз релоепюрспх", Font_11x18, YELLOW, RED);
+        if(set[sensor]*10 > ds.pvT[sensor]) GUI_WriteString(30, Y_str, "дхл мхгэйнз релоепюрспх", Font_11x18, YELLOW, RED);
         else  GUI_WriteString(30, Y_str, "дхл бхянйнз релоепюрспх", Font_11x18, YELLOW, RED);
       }
       else GUI_WriteString(30, Y_str, "       дюрвхй дхлс     ", Font_11x18, YELLOW, fillScreen);
     }
-    Y_str = Y_str+18+10; // 248
+    Y_str = Y_str+18+15; // 270
     
-    if(ds.pvT[2]<1000) sprintf(buffTFT,"%3.1f$ ",(float)ds.pvT[2]/10);
-    else if(ds.pvT[2]<1270) sprintf(buffTFT,"%5d$ ", ds.pvT[2]/10);
+    if(ds.pvT[sensor]<1000) sprintf(buffTFT,"%3.1f$ ",(float)ds.pvT[sensor]/10);
+    else if(ds.pvT[sensor]<1270) sprintf(buffTFT,"%5d$ ", ds.pvT[sensor]/10);
     else sprintf(buffTFT," ---  ");
     GUI_WriteString(55, Y_str, buffTFT, Font_16x26, WHITE, BLACK);
-    sprintf(buffTFT,"%3i.0$ ", set[T2]);
+    sprintf(buffTFT,"%3i.0$ ", set[sensor]);
     GUI_WriteString(175, Y_str, buffTFT, Font_16x26, BLACK, WHITE);
-    Y_str = Y_str+26+10;  // 284
+    Y_str = Y_str+26+15;  // 311
   }
   if(VENTIL){
     if(errors & 0x80) GUI_WriteString(30, Y_str, "  ме опюжчщ бемрхкърнп  ", Font_11x18, YELLOW, RED);
     else {
-      sprintf(buffTFT,"%12s: %4i НА/УБК.", setName[VENT], speedData[set[VENT]][0]);
+      sprintf(buffTFT,"%12s: %4i НА/УБК.", setName[4], speedData[set[VENT]][0]);
       GUI_WriteString(10, Y_str, buffTFT, Font_11x18, YELLOW, fillScreen);
       }
   }
-  Y_str = Y_str+18+10;  // 312
+  Y_str = Y_str+18+15;  // 344
   
   if(modeCell<3 && VENTIL && curTime>2 && curTime<12){
     ticBeep = 10;
-    GUI_FillRectangle(40, Y_str, lcddev.width - 80, 56, RED);
+    GUI_FillRectangle(40, Y_str, lcddev.width - 80, 56, RED);// Y_str = 344+56 = 400
     if(modeCell) GUI_WriteString(70, Y_str+5, "гюйпхире гюякшмйх", Font_11x18, YELLOW, RED);
     else GUI_WriteString(65, Y_str+5, "бшдйпхире гюякшмйх", Font_11x18, YELLOW, RED);
     GUI_WriteString(110, Y_str+35, "БЕМРХКЪЖШЗ!", Font_11x18, YELLOW, RED);
@@ -194,7 +196,7 @@ void displ_1(void){
 //--------- мюкюьрсбюммъ ----------------------------------
 void displ_2(void){
   char txt[12];
-  int8_t i;
+  int8_t i, sensor;
   uint16_t color_txt, color_box;
   float flSet;
   Y_str = Y_top; X_left = 5;
@@ -209,23 +211,30 @@ void displ_2(void){
   Y_str = Y_str+10;
   for (i=-1; i<MAX_SET; i++){
     if(i==-1) sprintf(buffTFT,"       пефхл: %8s", modeName[modeCell]);
-    else if(i==3) sprintf(buffTFT,"%12s: %iЦНД.%02iУБК.", setName[i], set[i]/60, set[i]%60);  // "рпхбюкIярэ"
-    else if(i==4) sprintf(buffTFT,"%12s: %4i НА/УБК.", setName[i], speedData[set[i]][0]);     // "ьбхдйIярэ"
-    else if(i==5 || i==6){
-      if(set[i]){
+    else if(i==3) sprintf(buffTFT,"%12s: %iЦНД.%02iУБК.", setName[i], set[TMR0]/60, set[TMR0]%60);  // "рпхбюкIярэ"
+    else if(i==4) sprintf(buffTFT,"%12s: %4i НА/УБК.", setName[i], speedData[set[VENT]][0]);        // "ьбхдйIярэ"
+    else if(i==5){
+      if(set[TMON]){
         // ЕЯКХ бюпйю (modeCell==2) ГЮДЮЕРЯЪ Б mЯЕЙ.[НР 0.1ЯЕЙ. ДН 10 ЯЕЙ.] (ОЕПХНД 10 mЯЕЙ.)
-        if(modeCell==2) flSet = (float)set[i]/10; else flSet = set[i];
+        if(modeCell==2) flSet = (float)set[TMON]/10; else flSet = set[TMON];
+        sprintf(buffTFT,"%12s: %2.1fЯЕЙ.", setName[i], flSet);                                // "рюил.ON","рюил.OFF" 
+      }
+      else sprintf(buffTFT,"%12s:", "-----");
+    }
+    else if(i==6){
+      if(set[TMOFF]){
+        // ЕЯКХ бюпйю (modeCell==2) ГЮДЮЕРЯЪ Б mЯЕЙ.[НР 0.1ЯЕЙ. ДН 10 ЯЕЙ.] (ОЕПХНД 10 mЯЕЙ.)
+        if(modeCell==2) flSet = (float)set[TMOFF]/10; else flSet = set[TMOFF];
         sprintf(buffTFT,"%12s: %2.1fЯЕЙ.", setName[i], flSet);                                // "рюил.ON","рюил.OFF" 
       }
       else sprintf(buffTFT,"%12s:", "-----");
     }
     else if(i==7) sprintf(buffTFT,"%12s:", setName[i]);                                       // "Iмье"
     else {                                                                                    // "t йюлепх","t опндсйрю","t дхлю"
-      if(set[i]){
-        if(modeCell==2 && i==2) {strcpy(txt,"t бнкнцнцн");}// "бюпIммъ"
-        else sprintf(txt,"%12s",setName[i]);
-        sprintf(buffTFT,"%12s: %3i$ ", txt, set[i]); 
-      } 
+      if(modeCell==2 && i==2) {sensor = T3; strcpy(txt,"t бнкнцнцн");}                        // "бюпIммъ"
+      else if(modeCell==3 && i==2) {sensor = T2; sprintf(txt,"%12s",setName[i]);}             // "йновеммъ"
+      else {sensor = i; sprintf(txt,"%12s",setName[i]);}             
+      if(set[sensor]){sprintf(buffTFT,"%12s: %3i$ ", txt, set[sensor]);} 
       else sprintf(buffTFT,"%12s:", "-----");
     }
     if(i == numSet){color_txt = BLACK; color_box = WHITE;} else {color_txt = WHITE; color_box = BLACK;}
@@ -236,6 +245,8 @@ void displ_2(void){
 
 //--------- гл╡мю релоепюрсп ----------------------------------
 void displ_3(void){
+  char txt[12];
+  float flSet;
   Y_str = Y_top; X_left = 5;
   if(NEWBUTT){ NEWBUTT = OFF;
     GUI_Clear(fillScreen);
@@ -250,16 +261,29 @@ void displ_3(void){
     drawButton(CYAN, 7, "-50");
   }
   Y_str = Y_str+50;
-  sprintf(buffTFT,"%12s:", setName[numSet]);
-  GUI_WriteString(X_left+20, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
-
-  if(numSet==3) sprintf(buffTFT,"%iЦНД.%02iУБК.", newval[numSet]/60, newval[numSet]%60);
-  else if(numSet==4) sprintf(buffTFT,"%3iЯЕЙСМД", newval[numSet]);
-  else sprintf(buffTFT,"%3i$", newval[numSet]);
-  if(numSet==3||numSet==4) GUI_WriteString(X_left+180, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
-  else {
+  
+  if(numSet<3){
+    if(numSet==2){
+      if(modeCell==2) strcpy(txt,"t бнкнцнцн");   // "бюпIммъ"
+      else sprintf(txt,"%12s",setName[numSet]);   // "йновеммъ"
+      GUI_WriteString(X_left+20, Y_str, txt, Font_11x18, WHITE, BLACK);
+    }
+    else {
+      sprintf(buffTFT,"%12s:", setName[numSet]);  // "ясьшммъ","нафюпйю"
+      GUI_WriteString(X_left+20, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
+    }
+    sprintf(buffTFT,"%3i$", newval[numSet]);
     Y_str = Y_str-4;
     GUI_WriteString(X_left+180, Y_str, buffTFT, Font_16x26, WHITE, BLACK);
+  }
+  else {
+    if(numSet==3) sprintf(buffTFT,"%12s: %iЦНД.%02iУБК.", setName[numSet], newval[numSet]/60, newval[numSet]%60);
+    else if(numSet==5 || numSet==6){
+      // ЕЯКХ бюпйю (modeCell==2) ГЮДЮЕРЯЪ Б mЯЕЙ.[НР 0.1ЯЕЙ. ДН 10 ЯЕЙ.] (ОЕПХНД 10 mЯЕЙ.)
+      if(modeCell==2) flSet = (float)newval[numSet]/10; else flSet = newval[numSet];
+      sprintf(buffTFT,"%12s: %2.1fЯЕЙ.", setName[numSet], flSet);                                // "рюил.ON" "рюил.OFF"
+    }
+    GUI_WriteString(X_left+20, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
   }
 }
 
@@ -304,11 +328,11 @@ void displ_5(void){
   }
   Y_str = Y_str+10;
   for (i=0; i<MAX_OTHER; i++){
-    if(i==0) sprintf(buffTFT,"%12s: %3iЯЕЙ.", otherName[i], set[i+MAX_SET-1]);   // "опндсбюммъ"
-    else if(i==1) sprintf(buffTFT,"%12s: %3i$", otherName[i], set[i+MAX_SET-1]); // "юбюпхъ"
-    else if(i==2) sprintf(buffTFT,"%12s: %2.1f$", otherName[i], (float)set[i+MAX_SET-1]/10); // "цхярепег"
-    else if(i<5) sprintf(buffTFT,"%12s: %3i", otherName[i], set[i+MAX_SET-1]); // "нункндф.","нясьеммъ"
-    else sprintf(buffTFT,"%12s: %3i", otherName[i], dataRAM.config.koff[i-5]); // "Prop","Integ"
+    if(i==0) sprintf(buffTFT,"%12s: %3iЯЕЙ.", otherName[i], set[TMR1]);   // "опндсбюммъ"
+    else if(i==1) sprintf(buffTFT,"%12s: %3i$", otherName[i], set[ALRM]); // "юбюпхъ"
+    else if(i==2) sprintf(buffTFT,"%12s: %2.1f$", otherName[i], (float)set[HIST]/10); // "цхярепег"
+    else if(i==3) sprintf(buffTFT,"%12s: %3i", otherName[i], set[CHILL]); // "нункндф."
+    else sprintf(buffTFT,"%12s: %3i", otherName[i], dataRAM.config.koff[i-4]); // "Prop","Integ"
     if(i == numSet){color_txt = BLACK; color_box = WHITE;} else {color_txt = WHITE; color_box = BLACK;}
     GUI_WriteString(X_left, Y_str, buffTFT, Font_11x18, color_txt, color_box);
     Y_str = Y_str+18+5;
@@ -337,7 +361,7 @@ void displ_6(void){
   if(numSet==0) sprintf(buffTFT,"%3icek.", newval[numSet]);           // "опндсбюммъ"
   else if(numSet==1) sprintf(buffTFT,"%3i$", newval[numSet]);         // "юбюпхъ"
   else if(numSet==2) sprintf(buffTFT,"%1.1f$", (float)newval[numSet]/10); // "цхярепег"
-  else sprintf(buffTFT,"%4i", newval[numSet]);                        // "нункндф.","нясьеммъ","Prop","Integ"
+  else sprintf(buffTFT,"%4i", newval[numSet]);                        // "нункндф.","Prop","Integ"
 
   Y_str = Y_str-4;
   GUI_WriteString(X_left+180, Y_str, buffTFT, Font_16x26, WHITE, BLACK);
