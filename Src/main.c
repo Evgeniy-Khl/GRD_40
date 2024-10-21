@@ -68,10 +68,10 @@ const char* relayName[7]={"ПЫД","НАГРЫВ","ТАЙМЕР","ВОЛОГА","ЕЛЕКТРО","Кл.ДИМА","
 //={{1000,0x2F4},{1200,0x4A6},{1400,0x658},{1600,0x80A},{1800,0x9BC},{2000,0xB6E},{2200,0xD20},{2400,0xFFF}};//d=434->1.15V
 //={{1000,0x2F4},{1200,0x4A6},{1400,0x655},{1600,0x804},{1800,0x9B6},{2000,0xB65},{2200,0xD14},{2400,0xFFF}};//d=434+коррекция
 struct Ds ds;
-uint16_t speedData[MAX_SPEED][2];
+uint16_t speedData[MAX_SPEED][2], errors;
 int16_t pvTH, pvRH, tmrCounter;
 uint16_t set[INDEX], touch_x, touch_y, Y_str, X_left, Y_top, Y_bottom, fillScreen, point_color, checkTime, checkSmoke;
-uint8_t displ_num=0, modeCell, oldNumSet, buttonAmount, lost, errors;
+uint8_t displ_num=0, modeCell, oldNumSet, buttonAmount, lost;
 uint8_t timer10ms, tmrVent, ticBeep, pwTriac, invers;
 uint8_t familycode[MAX_SENSOR][8];
 int8_t ds18b20_amount, numSet=0, resetDispl=0, tmrWater;
@@ -160,7 +160,7 @@ int main(void)
   #ifdef MANUAL_CHECK
     LCD_Init(USE_VERTICAL1);
   #else
-    LCD_Init(USE_VERTICAL0);
+    LCD_Init(USE_VERTICAL0);//0
   #endif
   GUI_Clear(fillScreen);
   if((lcddev.dir&1)==0) X_left = 20; else X_left = 100;
@@ -170,7 +170,7 @@ int main(void)
   
   i16 = initData();
   ds18b20_port_init();      // линия 1-Wire
-  ds18b20_checkSensor(4);   // check DS18B20 sensors ?????????????????????????????????????
+  ds18b20_checkSensor(4);   // check DS18B20 sensors
  
   switch (i16){
   	case 0: GUI_WriteString(5, Y_str, "Ыныцыалызацыя успышна.", Font_11x18, GREEN, BLACK);	break;
@@ -259,7 +259,7 @@ int main(void)
         else SPEED=OFF;
         if(tmrVent) --tmrVent;    // ожидаем замыкания контакта частотного преобразователя
         else if(SPEED) WORK=ON;
-        else {errors |= 0x80; WORK=OFF; relayOut.value=OFF;}  // НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
+        else {errors |= ERR8; WORK=OFF; relayOut.value=OFF;}  // НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
       }
       //------------------------------------------- В РАБОТЕ -----------------------------------------------
       if(WORK){
@@ -302,19 +302,19 @@ int main(void)
         u16 = set[HIST]*4;                    // HIST = 0.5 * 4 = 2.0 грд. Ц. цветовая индикация
         if(u16>=set[ALRM]*10) u16 = set[ALRM]*10/2; // тогда привяжем к аварии
         //--- кстанавливаем point_color в соответсвии с отклонением
-        if(i16+set[ALRM]*10<0) {errors|=0x04; point_color = RED;} // ПЕРЕГРЕВ В КАМЕРЕ
+        if(i16+set[ALRM]*10<0) {errors|=ERR3; point_color = RED;} // ПЕРЕГРЕВ В КАМЕРЕ
         else if(i16>-u16 && i16<u16) point_color = GREEN; // норма
         else if(i16<-u16){                    // ВЫЩЕ нормы
           point_color = MAGENTA;
-          if(PERFECT) errors|=0x10;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
+          if(PERFECT) errors|=ERR5;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
         }
         else if(i16>u16){                     // НИЖЕ нормы
           point_color = CYAN;
-          if(PERFECT) errors|=0x10;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
+          if(PERFECT) errors|=ERR5;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
         }
         
         i16 = set[T1]*10 - ds.pvT[1];    // величина ошибки регулирования датчика 1
-        if(i16+set[ALRM]*10<0) {errors|=0x08;} // ПЕРЕГРЕВ В ПРОДУКТЕ
+        if(i16+set[ALRM]*10<0) {errors|=ERR4;} // ПЕРЕГРЕВ В ПРОДУКТЕ
         // ---------------------------------------- НАГРЕВАТЕЛЬ / ОХЛАДИТЕЛЬ -------------------------------------
         //------ работает как нагреватель
         if(ds.pvT[0]<1999 && ds.pvT[0]>1){
@@ -346,7 +346,7 @@ int main(void)
           i16 = set[T2]*10 - ds.pvT[2];     // величина ошибки регулирования датчика 2 (Дым)
           if(++checkSmoke>CHKSMOKE){       // (відхилення 2 грд.Ц) ТЕМПЕРАТУРЫ ДЫМА
             checkSmoke=CHKSMOKE;
-            if(abs(i16)-set[ALRM]*10>0) errors|=0x20;
+            if(abs(i16)-set[ALRM]*10>0) errors|=ERR6;
           }
           u16 = Relay(i16, set[HIST]);  // величина ошибки температуры дыма
           switch (u16){
@@ -405,13 +405,18 @@ int main(void)
         switch (errors){
           case 0x01: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N1
           case 0x02: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N2
-          case 0x04: ticBeep =120; break;// ПЕРЕГРЫВ В КАМЕРI
-          case 0x08: ticBeep =120; break;// ПЕРЕГРЫВ В ПРОДУКТI
-          case 0x10: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ В КАМЕРI
-          case 0x20: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ ДИМA
-          case 0x40: ticBeep = 60; break;//
-          case 0x80: ticBeep = 60; break;// НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
-          default: ticBeep =200; break;
+          case 0x04: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N3
+          case 0x08: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N4
+          case ERR3: ticBeep =120; break;// ПЕРЕГРЫВ В КАМЕРI
+          case ERR4: ticBeep =120; break;// ПЕРЕГРЫВ В ПРОДУКТI
+          case ERR5: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ В КАМЕРI
+          case ERR6: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ ДИМA
+          case ERR7: ticBeep = 60; break;//
+          case ERR8: ticBeep = 60; break;// НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
+          default: 
+            if(errors==0x0C) ticBeep = 80;
+            else ticBeep =200;
+          break;
         }
       } else ALARM = OFF;  // есть ошибки
 

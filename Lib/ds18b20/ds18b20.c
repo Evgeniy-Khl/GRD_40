@@ -9,9 +9,9 @@ uint8_t LastFamilyDiscrepancy;
 uint8_t ROM_NO[8];
 //uint8_t my_dt[8], my_ret;
 extern char buffTFT[];
-extern uint8_t familycode[MAX_SENSOR][8], ds18b20_amount, Y_str, Y_top, errors;
+extern uint8_t familycode[MAX_SENSOR][8], ds18b20_amount, Y_str, Y_top;
 extern int16_t pvTH, pvRH;
-extern uint16_t fillScreen;
+extern uint16_t fillScreen, errors;
 
 //--------------------------------------------------
 __STATIC_INLINE void DelayMicro(__IO uint32_t micros){
@@ -247,18 +247,18 @@ void temperature_check(){
 
 //----------------------------------------------------------
 void ds18b20_checkSensor(uint8_t sensors){
-  uint8_t errors=0, i, num, x, ok, byte7;
+  uint8_t errors=0, i, num, x, ok;
   uint16_t point_color=WHITE;
   for(i=0;i<sensors;i++){
-    if(familycode[i][7]==0){            // пустой CRC
-      errors++;
-      sprintf(buffTFT,"Код датчика N%u выдсутный!",i+1);
-      GUI_WriteString(5, Y_str, buffTFT, Font_11x18, YELLOW, RED);
-      Y_str = Y_str+18+5;
-    }
+    if(familycode[i][7]==0) errors++;   // пустой CRC
     else {                              // код заполнен
       if(ds18b20_ReadStratcpad(i)) ds18b20_amount++;
-      else {familycode[i][7]=0; errors++;}  // но датчик не подключен
+      else {
+        sprintf(buffTFT,"Датчик N%u выдсутный!",i+1);
+        GUI_WriteString(5, Y_str, buffTFT, Font_11x18, RED, YELLOW);
+        Y_str = Y_str+18+5;
+        familycode[i][7]=0; errors++;   // но датчик не подключен
+      }
     }
   }
   if(errors){
@@ -287,7 +287,6 @@ void ds18b20_checkSensor(uint8_t sensors){
           for(i=0;i<sensors;i++){
             if(num!=i){   // исключаем проверку своего же кода
               if(familycode[num][7]==familycode[i][7]){
-                byte7 = familycode[num][7];   // запоминаем CRC
                 familycode[num][7]=0; ok = 0;
                 Y_str = Y_str+18+5;
                 sprintf(buffTFT,"Це датчик N%u потрыбен ынший!",i+1);
@@ -319,8 +318,11 @@ void ds18b20_checkSensor(uint8_t sensors){
             case 2: point_color=MAGENTA; break; // очень сердимся
             case 3: point_color=RED; break;     // последнее предупреждение
             default: point_color=WHITE; x=0;    // релакс
-                      if(num==2){ // если уже записаны 3 датчика, а четвертого не подключают то ...
-                        familycode[num][7]=byte7;     // востанавливаем CRC
+                      if(num==3){ // если уже записаны 3 датчика, а четвертого не подключают то ...
+                        for(uint8_t i=0;i<8;i++){
+                          familycode[num][i]=familycode[num-1][i];     // копирруем familycode 3 датчика
+                        }
+                        
                         num++;  // и представляем что это четвертый датчик
                       }
             break;

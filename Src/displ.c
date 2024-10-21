@@ -13,8 +13,8 @@ extern const char* modeName[];
 extern const char* otherName[];
 extern const char* relayName[];
 extern const char* analogName[];
-extern uint8_t displ_num, modeCell, ds18b20_amount, ds18b20_num, familycode[][8], newDate, errors, ticBeep;
-extern uint16_t speedData[MAX_SPEED][2];
+extern uint8_t displ_num, modeCell, ds18b20_amount, ds18b20_num, familycode[][8], newDate, ticBeep;
+extern uint16_t speedData[MAX_SPEED][2], errors;
 extern uint16_t fillScreen, Y_str, X_left, Y_top, Y_bottom, point_color, set[INDEX], mainTimer, tmrCounter, checkSmoke;
 extern int8_t numSet, numDate;
 extern RTC_HandleTypeDef hrtc;
@@ -72,8 +72,8 @@ void displ_0(void){
   //----------------------
   X_left = 35;
   if(errors & 0x01) GUI_WriteString(X_left, Y_str, "  онлхкйю дюрвхйю N1  ", Font_11x18, YELLOW, RED);
-  else if(errors & 0x04) GUI_WriteString(X_left, Y_str, "  оепецпшб б йюлепI   ", Font_11x18, YELLOW, RED);
-  else if(errors & 0x10) GUI_WriteString(X_left, Y_str, "бшдушкеммъ релоепюрспх", Font_11x18, YELLOW, RED);
+  else if(errors & ERR3) GUI_WriteString(X_left, Y_str, "  оепецпIб б йюлепI   ", Font_11x18, YELLOW, RED);
+  else if(errors & ERR5) GUI_WriteString(X_left, Y_str, "бIдуIкеммъ релоепюрспх", Font_11x18, YELLOW, RED);
   else GUI_WriteString(X_left, Y_str, " релоепюрспю б йюлепI ", Font_11x18, YELLOW, fillScreen);
   Y_str = Y_str+18+15; //89
   
@@ -89,7 +89,7 @@ void displ_0(void){
   //-------------------------------------------------------------------------------------------------
   X_left = 35;
   if(errors & 0x02) GUI_WriteString(X_left, Y_str, "  онлхкйю дюрвхйю N2  ", Font_11x18, YELLOW, RED);
-  else if(errors & 0x08) GUI_WriteString(X_left, Y_str, " оепецпшб б опндсйрI ", Font_11x18, YELLOW, RED);
+  else if(errors & ERR4) GUI_WriteString(X_left, Y_str, " оепецпIб б опндсйрI ", Font_11x18, YELLOW, RED);
   else GUI_WriteString(X_left, Y_str, "релоепюрспю б опндсйрI", Font_11x18, YELLOW, fillScreen);
   Y_str = Y_str+18+15; // 128
   
@@ -115,10 +115,15 @@ void displ_0(void){
   Y_str = Y_str+18+15;  // 237
   
   if(modeCell>1){
-    if(modeCell==2) {sensor = T3; GUI_WriteString(80, Y_str, "бнкнцхи дюрвхй", Font_11x18, YELLOW, fillScreen);}
+    if(modeCell==2){
+      sensor = T3; 
+      if(errors & 0x0008) GUI_WriteString(80, Y_str, "онлхкйю дюрвхйю", Font_11x18, YELLOW, RED);
+      else GUI_WriteString(80, Y_str, "бнкнцхи дюрвхй ", Font_11x18, YELLOW, fillScreen);
+    }
     else if(modeCell==3){
       sensor = T2;
-      if(errors & 0x20){
+      if(errors & 0x0004) GUI_WriteString(30, Y_str, "    онлхкйю дюрвхйю    ", Font_11x18, YELLOW, RED);
+      else if(errors & ERR6){
         if(set[sensor]*10 > ds.pvT[sensor]) GUI_WriteString(30, Y_str, "дхл мхгэйнз релоепюрспх", Font_11x18, YELLOW, RED);
         else  GUI_WriteString(30, Y_str, "дхл бхянйнз релоепюрспх", Font_11x18, YELLOW, RED);
       }
@@ -135,13 +140,13 @@ void displ_0(void){
     Y_str = Y_str+26+15;  // 311
   }
   if(VENTIL){
-    if(errors & 0x80) GUI_WriteString(30, Y_str, "  ме опюжчщ бемрхкърнп  ", Font_11x18, YELLOW, RED);
+    if(errors & ERR8) GUI_WriteString(30, Y_str, "  ме опюжчщ бемрхкърнп  ", Font_11x18, YELLOW, RED);
     else {
       sprintf(buffTFT,"%12s: %4i НА/УБК.", setName[4], speedData[set[VENT]][0]);
       GUI_WriteString(10, Y_str, buffTFT, Font_11x18, YELLOW, fillScreen);
       }
   }
-  Y_str = Y_str+18+15;  // 344
+  Y_str = Y_str+18+10;  // 339
   
   if(modeCell<3 && VENTIL && curTime>2 && curTime<12){
     ticBeep = 10;
@@ -151,6 +156,11 @@ void displ_0(void){
     GUI_WriteString(110, Y_str+35, "БЕМРХКЪЖШЗ!", Font_11x18, YELLOW, RED);
   }
   else GUI_FillRectangle(40, Y_str, lcddev.width - 80, 56, fillScreen);
+  
+//*********************************************
+//  sprintf(buffTFT,"error: 0x%04x ", errors);
+//  GUI_WriteString(10, Y_bottom-20, buffTFT, Font_11x18, YELLOW, fillScreen);
+//*********************************************
 }
 
 //-------------------------------- ярюм бшунд╡б ------------------------------------------------------

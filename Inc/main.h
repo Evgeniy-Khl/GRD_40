@@ -87,7 +87,7 @@ void Error_Handler(void);
 #define ON          1
 #define OFF         0
 #define HEATER_DIR  10
-#define HUMIDI_DIR  11
+//#define HUMIDI_DIR  11
 #define T0    0 // Уставка T1 грд. 
 #define T1    1 // Уставка T2 грд. 
 #define T2    2 // Уставка T3 грд. (Дым)
@@ -101,7 +101,20 @@ void Error_Handler(void);
 #define HIST  10 // Гистерезис грд/10
 #define CHILL 11 // Охлаждение
 
-#define MANUAL_CHECK
+#define ERR1  0x0010  //
+#define ERR2  0x0020  //
+#define ERR3  0x0040  // ПЕРЕГРЫВ В КАМЕРI
+#define ERR4  0x0080  // ПЕРЕГРЫВ В ПРОДУКТI
+#define ERR5  0x0100  // ВIДХIЛЕННЯ ТЕМПЕРАТУРИ В КАМЕРI
+#define ERR6  0x0200  // ВIДХIЛЕННЯ ТЕМПЕРАТУРИ ДИМA
+#define ERR7  0x0400  //
+#define ERR8  0x0800  // НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
+
+
+
+
+
+//#define MANUAL_CHECK
 
 #ifdef MANUAL_CHECK
   #define CHKSMOKE  180 // (3 мин.) отжидание проверки температуры дыма в сек.
