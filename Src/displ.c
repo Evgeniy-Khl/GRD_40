@@ -15,7 +15,7 @@ extern const char* relayName[];
 extern const char* analogName[];
 extern uint8_t displ_num, modeCell, ds18b20_amount, ds18b20_num, familycode[][8], newDate, ticBeep;
 extern uint16_t speedData[MAX_SPEED][2], errors;
-extern uint16_t fillScreen, Y_str, X_left, Y_top, Y_bottom, point_color, set[INDEX], mainTimer, tmrCounter, checkSmoke;
+extern uint16_t fillScreen, Y_str, X_left, Y_top, Y_bottom, color0, color1, set[INDEX], mainTimer, tmrCounter, checkSmoke;
 extern int8_t numSet, numDate;
 extern RTC_HandleTypeDef hrtc;
 extern RTC_TimeTypeDef sTime;
@@ -39,8 +39,8 @@ void displ_0(void){
   const char* point[3] = {"  ","  ","  "};
   uint32_t curTime = sTime.Hours*3600 + sTime.Minutes*60 + sTime.Seconds;
   if(WORK){
-    if(INSIDE) point[1] = "->";
-    else if(set[TMR0]) point[2] = "->";
+//    if(INSIDE) point[1] = "->";
+    if(set[TMR0]) point[2] = "->";
     else  point[0] = "->";
   }
   if(NEWBUTT){ NEWBUTT = OFF;
@@ -59,7 +59,7 @@ void displ_0(void){
   else if(PURGING) GUI_WriteString(X_left, Y_str, "PURG ", Font_16x26, BLACK, CYAN);
   else {
     GUI_WriteString(X_left, Y_str, " OFF ", Font_16x26, YELLOW, RED);
-    point_color = WHITE;
+    color0 = WHITE; color1 = WHITE;
   }
   
   GUI_WriteString(120, Y_str, "–≈∆»Ã:", Font_11x18, YELLOW, fillScreen);
@@ -82,14 +82,14 @@ void displ_0(void){
   if(ds.pvT[0]<1000) sprintf(buffTFT,"%3.1f$ ",(float)ds.pvT[0]/10);
   else if(ds.pvT[0]<1270) sprintf(buffTFT,"%5d$ ", ds.pvT[0]/10);
   else sprintf(buffTFT," ---  ");
-  GUI_WriteString(55, Y_str, buffTFT, Font_16x26, point_color, BLACK);
+  GUI_WriteString(55, Y_str, buffTFT, Font_16x26, color0, BLACK);
   sprintf(buffTFT,"%3i.0$ ", set[T0]);
   GUI_WriteString(175, Y_str, buffTFT, Font_16x26, BLACK, WHITE);
   Y_str = Y_str+26+15; //130
   //-------------------------------------------------------------------------------------------------
   X_left = 35;
   if(errors & 0x02) GUI_WriteString(X_left, Y_str, "  œŒÃ»À ¿ ƒ¿“◊» ¿ N2  ", Font_11x18, YELLOW, RED);
-  else if(errors & ERR4) GUI_WriteString(X_left, Y_str, " œ≈–≈√–I¬ ¬ œ–Œƒ” “I ", Font_11x18, YELLOW, RED);
+  else if(errors & ERR4) GUI_WriteString(X_left, Y_str, " œ≈–≈√–I¬ ¬ œ–Œƒ” “I  ", Font_11x18, YELLOW, RED);
   else GUI_WriteString(X_left, Y_str, "“≈Ãœ≈–¿“”–¿ ¬ œ–Œƒ” “I", Font_11x18, YELLOW, fillScreen);
   Y_str = Y_str+18+15; // 128
   
@@ -98,7 +98,7 @@ void displ_0(void){
   if(ds.pvT[1]<1000) sprintf(buffTFT,"%3.1f$ ",(float)ds.pvT[1]/10);
   else if(ds.pvT[1]<1270) sprintf(buffTFT,"%5d$ ", ds.pvT[1]/10);
   else sprintf(buffTFT," ---  ");
-  GUI_WriteString(55, Y_str, buffTFT, Font_16x26, WHITE, BLACK);
+  GUI_WriteString(55, Y_str, buffTFT, Font_16x26, color1, BLACK);
   sprintf(buffTFT,"%3i.0$ ", set[T1]);
   GUI_WriteString(175, Y_str, buffTFT, Font_16x26, BLACK, WHITE);
   Y_str = Y_str+26+15; // 171
@@ -110,7 +110,9 @@ void displ_0(void){
     sprintf(buffTFT,"%2s %02u:%02u:%02u ", point[2], sTime.Hours, sTime.Minutes, sTime.Seconds);
     GUI_WriteString(15, Y_str, buffTFT, Font_11x18, YELLOW, fillScreen);
   }
-  sprintf(buffTFT," %i„Ó‰.%02iı‚Î.", set[TMR0]/60, set[TMR0]%60);
+  uint16_t tmr = set[TMR0];
+  if(PURGING) {tmr = set[TMR1]; sprintf(buffTFT," %iı‚Î.%02iÒÂÍ.", tmr/60, tmr%60);}
+  else sprintf(buffTFT," %i„Ó‰.%02iı‚Î.", tmr/60, tmr%60);
   GUI_WriteString(165, Y_str, buffTFT, Font_11x18, BLACK, WHITE);
   Y_str = Y_str+18+15;  // 237
   
@@ -158,7 +160,7 @@ void displ_0(void){
   else GUI_FillRectangle(40, Y_str, lcddev.width - 80, 56, fillScreen);
   
 //*********************************************
-//  sprintf(buffTFT,"error: 0x%04x ", errors);
+//  sprintf(buffTFT,"onoff: 0x%04x ", onoff);
 //  GUI_WriteString(10, Y_bottom-20, buffTFT, Font_11x18, YELLOW, fillScreen);
 //*********************************************
 }

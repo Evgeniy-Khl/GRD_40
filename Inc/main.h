@@ -86,8 +86,7 @@ void Error_Handler(void);
 #define MAX_SPEED   8
 #define ON          1
 #define OFF         0
-#define HEATER_DIR  10
-//#define HUMIDI_DIR  11
+
 #define T0    0 // Уставка T1 грд. 
 #define T1    1 // Уставка T2 грд. 
 #define T2    2 // Уставка T3 грд. (Дым)
@@ -114,7 +113,7 @@ void Error_Handler(void);
 
 
 
-//#define MANUAL_CHECK
+#define MANUAL_CHECK
 
 #ifdef MANUAL_CHECK
   #define CHKSMOKE  180 // (3 мин.) отжидание проверки температуры дыма в сек.
@@ -155,7 +154,7 @@ extern struct Ds ds;
 #define NEWBUTT portFlag.bitfield.a3  // New screen flag
 #define VENTIL	portFlag.bitfield.a4  // Fan speed flag
 #define PERFECT	portFlag.bitfield.a5  // Достигли желаемой температуры
-#define INSIDE  portFlag.bitfield.a6  // End by product temperature
+#define RESERVE portFlag.bitfield.a6  // резерв
 #define PURGING portFlag.bitfield.a7  // Продувка
 
 #define TRIAC   relayOut.bitfield.a0  // SSR-25DA

@@ -70,7 +70,7 @@ const char* relayName[7]={"ПЫД","НАГРЫВ","ТАЙМЕР","ВОЛОГА","ЕЛЕКТРО","Кл.ДИМА","
 struct Ds ds;
 uint16_t speedData[MAX_SPEED][2], errors;
 int16_t pvTH, pvRH, tmrCounter;
-uint16_t set[INDEX], touch_x, touch_y, Y_str, X_left, Y_top, Y_bottom, fillScreen, point_color, checkTime, checkSmoke;
+uint16_t set[INDEX], touch_x, touch_y, Y_str, X_left, Y_top, Y_bottom, fillScreen, color0, color1, checkTime, checkSmoke;
 uint8_t displ_num=0, modeCell, oldNumSet, buttonAmount, lost;
 uint8_t timer10ms, tmrVent, ticBeep, pwTriac, invers;
 uint8_t familycode[MAX_SENSOR][8];
@@ -122,6 +122,9 @@ int main(void)
   /* USER CODE BEGIN 1 */
   int16_t i16;
   uint16_t u16;
+  #ifdef MANUAL_CHECK
+    
+  #endif
 //  uint8_t temp=0, pvspeed=0;
   /* USER CODE END 1 */
 
@@ -156,11 +159,11 @@ int main(void)
   HAL_GPIO_WritePin(Beep_GPIO_Port, Beep_Pin, GPIO_PIN_RESET);
 
   Y_bottom=lcddev.height-22; Y_str = 5;
-  fillScreen = BLACK; point_color = WHITE;
+  fillScreen = BLACK; color0 = WHITE;
   #ifdef MANUAL_CHECK
     LCD_Init(USE_VERTICAL1);
   #else
-    LCD_Init(USE_VERTICAL0);//0
+    LCD_Init(USE_VERTICAL0);
   #endif
   GUI_Clear(fillScreen);
   if((lcddev.dir&1)==0) X_left = 20; else X_left = 100;
@@ -217,7 +220,7 @@ int main(void)
   NEWBUTT = ON;
   #ifdef MANUAL_CHECK
   ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=150; ds.pvT[3]=200;
-  int8_t dpv0 = 2, dpv1 = 2, dpv2 = 2;
+  int8_t dpv0 = 2, dpv1 = 2, dpv2 = 2, count;
   #endif
   /* USER CODE END 2 */
 
@@ -263,31 +266,93 @@ int main(void)
       }
       //------------------------------------------- В РАБОТЕ -----------------------------------------------
       if(WORK){
-        TIMER=ON;
-        if(HAL_GPIO_ReadPin(Input1_GPIO_Port, Input1_Pin) == GPIO_PIN_RESET){
-          if(++tmrWater>5) {tmrWater=5; WATER=ON;}
+        TIMER=ON;         // всегда включен в работу
+        if(modeCell==2){  // только в режиме варка modeCell==2
+          if(HAL_GPIO_ReadPin(Input1_GPIO_Port, Input1_Pin) == GPIO_PIN_RESET){
+            if(++tmrWater>5) {tmrWater=5; WATER=ON;}
+          }
+          else {
+            if(--tmrWater<0) {tmrWater=0; WATER=OFF;}
+          }
+        }
+        else WATER=OFF;
+        //------------ устанавливаем color0 в соответсвии с отклонением ------------------------
+        i16 = set[T0]*10 - ds.pvT[0];           // величина ошибки регулирования датчика 0
+        uint16_t abs16 = abs(i16);
+        if(abs16<set[HIST]) PERFECT=ON;         // Вышли на заданную температуру
+        u16 = set[ALRM]*10;                     // привяжем к аварии
+        
+        if(i16<=0){
+          if(abs16<u16)color0 = GREEN;          // норма
+          else if(abs16>=u16 && abs16<u16*2){errors|=ERR5; color0 = MAGENTA;} // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
+          else {errors|=ERR3; color0 = RED;}    // ПЕРЕГРЕВ В КАМЕРЕ
         }
         else {
-          if(--tmrWater<0) {tmrWater=0; WATER=OFF;}
+          if(abs16<u16)color0 = GREEN;          // норма
+          else if(abs16>=u16*2){
+            color0 = CYAN;                      // НИЖЕ нормы
+            if(PERFECT) errors|=ERR5;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
+          }
+        }
+        
+        //------------ устанавливаем color1 в соответсвии с отклонением -------------------------
+        i16 = set[T1]*10 - ds.pvT[1];           // величина ошибки регулирования датчика 1
+        abs16 = abs(i16);
+        
+        if(i16<=0){
+          if(abs16<u16/2)color1 = GREEN;        // норма
+          else if(abs16>=u16/2 && abs16<u16) color1 = MAGENTA;  // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
+          else {errors|=ERR4; color1 = RED;}    // ПЕРЕГРЕВ В ПРОДУКТЕ
+        }
+        else {
+          if(abs16<u16/2)color1 = GREEN;        // норма
+          else if(abs16>=u16) color1 = CYAN;    // НИЖЕ нормы
+        }
+        
+        // ---------------------------------------- НАГРЕВАТЕЛЬ / ОХЛАДИТЕЛЬ -------------------------------------
+        //------ работает как нагреватель
+        if(ds.pvT[0]<1999 && ds.pvT[0]>1){
+          i16 = Relay(set[T0]*10 - ds.pvT[0], set[HIST]);   // величина ошибки температуры воздуха
+          pwTriac = UpdatePID(0);                           // ПИД нагреватель
+        }
+        if(ds18b20_amount>1 && ds.pvT[1]<1999){             // величина ошибки температурs среды
+          if(i16==1) i16 = Relay(set[T1]*10 - ds.pvT[1], set[HIST]/2);
+          if(i16==OFF) pwTriac = OFF;                       // температура среды достигла заданной величины
+        }
+        if(pwTriac) TRIAC = ON;                             // включить (SSR-25DA)
+        //------ работает как охладитель
+        if(set[CHILL]&1){  
+          i16 = Relay(ds.pvT[0] - set[T0]*10, set[HIST]);
+          if(ds.pvT[0] > BEGINCOOL) i16 = OFF;              // температура выше которой ЗАПРЕЩЕНО включение охлаждения
+        }
+        switch (i16){
+          case ON:  HEATER = ON;  break;
+          case OFF: HEATER = OFF; break;
         }
     #ifdef MANUAL_CHECK
         //?????? Програмное задание температур ??????????
+        count++;
         int16_t pverr = set[T0]*10 - ds.pvT[0];
-        if(pverr>50) dpv0 = 5;
-        else if(pverr>5) dpv0 = 1;
-        else if(pverr<-2) dpv0 = -1;
+        if(pverr>150) dpv0 = 5;
+        else if(HEATER==ON) dpv0 = 1;
+        else if(HEATER==OFF) dpv0 =-1;
         ds.pvT[0]+=dpv0;
         //------------
-        pverr = ds.pvT[0] - ds.pvT[1];
-        if(pverr>50) dpv1 = 2;
-        else if(pverr>5) dpv1 = 1;
-        else if(pverr<-5) dpv1 = -1;
-        ds.pvT[1]+=dpv1;
+        if(count>3){ count=0;
+          pverr = ds.pvT[0] - ds.pvT[1];
+          dpv1 =-1;
+          if(pverr>200) dpv1 = 6;
+          else if(pverr>100) dpv1 = 4;
+          else if(pverr>50) dpv1 = 2;
+          else if(pverr>10) dpv1 = 1;
+          ds.pvT[1]+=dpv1;
+        }
         //------------
         pverr = set[T2]*10 - ds.pvT[2];
         if(pverr>50) dpv2 = 5;
         else if(pverr>25) dpv2 = 1;
         else if(pverr<-25) dpv2 = -1;
+        if(i16==OFF) dpv2=0;
         ds.pvT[2]+=dpv2;
         //------------
         pverr = set[T3]*10 - ds.pvT[3];
@@ -297,56 +362,13 @@ int main(void)
         ds.pvT[2]+=dpv2;
         //????????????????????????????????????????????????
     #endif
-        i16 = set[T0]*10 - ds.pvT[0];         // величина ошибки регулирования датчика 0
-        if(abs(i16)<set[HIST]) PERFECT=ON;    // Выщли на заданную температуру
-        u16 = set[HIST]*4;                    // HIST = 0.5 * 4 = 2.0 грд. Ц. цветовая индикация
-        if(u16>=set[ALRM]*10) u16 = set[ALRM]*10/2; // тогда привяжем к аварии
-        //--- кстанавливаем point_color в соответсвии с отклонением
-        if(i16+set[ALRM]*10<0) {errors|=ERR3; point_color = RED;} // ПЕРЕГРЕВ В КАМЕРЕ
-        else if(i16>-u16 && i16<u16) point_color = GREEN; // норма
-        else if(i16<-u16){                    // ВЫЩЕ нормы
-          point_color = MAGENTA;
-          if(PERFECT) errors|=ERR5;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
-        }
-        else if(i16>u16){                     // НИЖЕ нормы
-          point_color = CYAN;
-          if(PERFECT) errors|=ERR5;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
-        }
-        
-        i16 = set[T1]*10 - ds.pvT[1];    // величина ошибки регулирования датчика 1
-        if(i16+set[ALRM]*10<0) {errors|=ERR4;} // ПЕРЕГРЕВ В ПРОДУКТЕ
-        // ---------------------------------------- НАГРЕВАТЕЛЬ / ОХЛАДИТЕЛЬ -------------------------------------
-        //------ работает как нагреватель
-        if(ds.pvT[0]<1999 && ds.pvT[0]>1){
-          i16 = Relay(set[T0]*10 - ds.pvT[0], set[HIST]);  // величина ошибки температуры воздуха
-          u16 = 0; // номер канала по которому расчитана ошибка
-        }
-        else if(ds18b20_amount>1 && ds.pvT[1]<1999){// если датчик потерян то опираемся на температура среды
-          i16 = Relay(set[T1]*10 - ds.pvT[1], set[HIST]);
-          u16 = 1; // номер канала по которому расчитана ошибка
-        }
-        else {i16 = OFF; u16 = 255;}    // несуществующий канал
-        
-        if(u16<2){    // только если 0 или 1 канал
-          pwTriac = UpdatePID(u16);     // ПИД нагреватель 
-          if(pwTriac) TRIAC = ON;       // включить (SSR-25DA)
-        }
-        //------ работает как охладитель
-        if(set[HEATER_DIR]){  
-          i16 = Relay(ds.pvT[0] - set[T0]*10, set[HIST]);
-          if(ds.pvT[0] > BEGINCOOL) i16 = OFF;      // температура выше которой ЗАПРЕЩЕНО включение охлаждения
-        }
-        switch (i16){
-          case ON:  HEATER = ON;  break;
-          case OFF: HEATER = OFF; break;
-        }
         //-------------------------- Только для режима КОПЧЕНИЯ ---------------------------------
         if(modeCell==3){
           ELECTRO = ignition(ELECTRO);
           i16 = set[T2]*10 - ds.pvT[2];     // величина ошибки регулирования датчика 2 (Дым)
           if(++checkSmoke>CHKSMOKE){       // (відхилення 2 грд.Ц) ТЕМПЕРАТУРЫ ДЫМА
             checkSmoke=CHKSMOKE;
-            if(abs(i16)-set[ALRM]*10>0) errors|=ERR6;
+            if(abs(i16)>set[ALRM]*10*2) errors|=ERR6;
           }
           u16 = Relay(i16, set[HIST]);  // величина ошибки температуры дыма
           switch (u16){
@@ -355,12 +377,18 @@ int main(void)
           }
         }
         //---------------------------------------------------------------------------------------
-        if(set[TMR0]>30){
+        if(set[TMR0]>0){                                // если TMR0>0 то завершение режима по таймеру
           u16 = sTime.Hours*60 + sTime.Minutes;         // всего в минутах
           i16 = (set[TMR0] - u16)*60 - sTime.Seconds;   // осталось до выключения в секундах
-          if(i16<30) ticBeep = 5;                      // включить сигнал
+          if(i16<30) ticBeep = 5;                       // включить сигнал
+          if(i16<=0){                                   // завершение режима
+            portFlag.value = OFF; PURGING=ON; relayOut.value=OFF; ticBeep=200;
+            //------- далее продувка ---------
+              sTime.Hours=0; sTime.Minutes=0; sTime.Seconds=0;
+              HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+          }
         }
-        if(ds18b20_amount==1 && set[TMR0]==0){      // если 1 датчик и продолжительность 0 то завершение по температуре камеры.          
+        else if(ds18b20_amount==1){      // если только 1 датчик и продолжительность 0 то завершение по температуре камеры.          
           i16 = Relay(set[T0]*10 - ds.pvT[0], 0);   // температура камеры
           if(i16==OFF){
             portFlag.value = OFF; PURGING=ON; relayOut.value=OFF; ticBeep=200;
@@ -369,20 +397,14 @@ int main(void)
             HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
           }
         }
-        else if(INSIDE){                            // если завершение по температуре продукта.          
-          i16 = Relay(set[T1]*10 - ds.pvT[1], 0);   // температура продукта
+        else if(ds18b20_amount>1){      // если датчиков много и продолжительность 0 то завершение по температуре среды.          
+          i16 = Relay(set[T1]*10 - ds.pvT[1], 0);   // температура камеры
           if(i16==OFF){
             portFlag.value = OFF; PURGING=ON; relayOut.value=OFF; ticBeep=200;
             //------- далее продувка ---------
             sTime.Hours=0; sTime.Minutes=0; sTime.Seconds=0;
             HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
           }
-        }
-        else if(i16<=0){                    // если завершение программы по таймеру
-          portFlag.value = OFF; PURGING=ON; relayOut.value=OFF; ticBeep=200;
-          //------- далее продувка ---------
-            sTime.Hours=0; sTime.Minutes=0; sTime.Seconds=0;
-            HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
         }
         
       } //--------------------------- КОНЕЦ в работе -----------------------------------------------
@@ -400,25 +422,25 @@ int main(void)
 //      for (i16=0;i16<2;i16++){  // ручное управление аналоговыми выводами
 //        if(analogSet[i16]>-1) analogOut[i16]=analogSet[i16];
 //      }
-      if(errors){
-        ALARM = ON; 
+      if(errors && (set[CHILL]&2)==0){    // 2-отключены аварийные звуковые сигналы
         switch (errors){
-          case 0x01: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N1
-          case 0x02: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N2
-          case 0x04: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N3
-          case 0x08: ticBeep = 80; break;// ПОМИЛКА ДАТЧИКА N4
-          case ERR3: ticBeep =120; break;// ПЕРЕГРЫВ В КАМЕРI
-          case ERR4: ticBeep =120; break;// ПЕРЕГРЫВ В ПРОДУКТI
-          case ERR5: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ В КАМЕРI
-          case ERR6: ticBeep = 20; break;// ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ ДИМA
-          case ERR7: ticBeep = 60; break;//
-          case ERR8: ticBeep = 60; break;// НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
+          case 0x01: ticBeep = 80; break; // ПОМИЛКА ДАТЧИКА N1
+          case 0x02: ticBeep = 80; break; // ПОМИЛКА ДАТЧИКА N2
+          case 0x04: ticBeep = 80; break; // ПОМИЛКА ДАТЧИКА N3
+          case 0x08: ticBeep = 80; break; // ПОМИЛКА ДАТЧИКА N4
+          case ERR3: ticBeep = 80; break; // ПЕРЕГРЫВ В КАМЕРI
+          case ERR4: ticBeep =120; break; // ПЕРЕГРЫВ В ПРОДУКТI
+          case ERR5: ticBeep = 10; break; // ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ
+          case ERR6: ticBeep = 20; break; // ВЫДХЫЛЕННЯ ТЕМПЕРАТУРИ ДИМA
+          case ERR7: ticBeep = 60; break; //
+          case ERR8: ticBeep = 60; break; // НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
           default: 
             if(errors==0x0C) ticBeep = 80;
             else ticBeep =200;
           break;
         }
-      } else ALARM = OFF;  // есть ошибки
+      }
+      if(errors) ALARM = ON; else ALARM = OFF;  // световой сигнал ошибки
 
       display();
     }

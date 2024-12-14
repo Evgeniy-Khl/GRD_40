@@ -5,7 +5,7 @@
 #include "rtc.h"
 
 extern I2C_HandleTypeDef hi2c1;
-extern uint16_t set[INDEX], point_color, checkSmoke;
+extern uint16_t set[INDEX], color0, color1, checkSmoke;
 extern int16_t pvRH, tmrCounter;
 extern uint16_t speedData[MAX_SPEED][2];
 extern uint8_t familycode[MAX_SENSOR][8], ds18b20_amount, ticBeep, errors, tmrVent;
@@ -22,13 +22,13 @@ void startPrg(void)
   if(WORK|VENTIL|PURGING){
     portFlag.value = OFF; CHECK = ON; NEWBUTT=ON;   // если был в работе - все отключаем.
     sendToI2c(0);
-    relayOut.value=OFF; point_color = WHITE; ticBeep=100;
+    relayOut.value=OFF; color0 = WHITE; color1 = WHITE; ticBeep=100;
   }
   else {          // после нажатия кнопки ПУСК
     VENTIL=ON; sendToI2c(speedData[set[VENT]][1]); tmrVent=20;// 20 сек. ожидания запуска вентилятора
     ticBeep=100; errors=0; tmrCounter=2; checkSmoke=0; // (2сек.) произвольное значение задержки больше 0
-    if(set[TMR0]){INSIDE=OFF;}
-    else if(ds18b20_amount>1) INSIDE=ON; // если есть датчик устанавливаем отсчет по температуре продукта.
+//    if(set[TMR0]){INSIDE=OFF;}
+//    else if(ds18b20_amount>1) INSIDE=ON; // если есть датчик устанавливаем отсчет по температуре продукта.
     sTime.Hours=0; sTime.Minutes=0; sTime.Seconds=0;
     HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
   }

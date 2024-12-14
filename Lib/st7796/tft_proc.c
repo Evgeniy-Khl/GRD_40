@@ -259,7 +259,7 @@ void checkButtons(uint8_t item){
         if(numSet==0){maxVal=1800, minVal=0;}// продувкa сек.
         else if(numSet==1){maxVal=50, minVal=1;}// Авария грд
         else if(numSet==2){maxVal=50, minVal=1;}// Гистерезис грд/10
-        else if(numSet==3){maxVal=1, minVal=0;}// // прямое/инвесное управление
+        else if(numSet==3){maxVal=3, minVal=0;}// // прямое/инвесное управление
         else if(numSet==4){maxVal=50, minVal=1;}// пропорциональный
         else if(numSet==5){maxVal=1000, minVal=100;}// интегральный
         switch (item){
