@@ -220,7 +220,7 @@ int main(void)
   NEWBUTT = ON;
   #ifdef MANUAL_CHECK
   ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=150; ds.pvT[3]=200;
-  int8_t dpv0 = 2, dpv1 = 2, dpv2 = 2, count;
+  int8_t dpv0 = 2, dpv1 = 2, dpv2 = 2, dpv3 = 2, count;
   #endif
   /* USER CODE END 2 */
 
@@ -240,16 +240,19 @@ int main(void)
       checkButtons(butt_num);                           // проверка нажатой кнопки
       checkTime = 0; CHECK = ON;
     }
-    // ----------------- УВЛАЖНИТЕЛЬ -------------------------------------
-    if(WORK && modeCell==2){          // только в режиме варка modeCell==2
-      if(timer10ms){                  // шаг отсчета интервала таймера 10 милисек.
-        timer10ms=0; 
-        HUMIDI=humidifier(HUMIDI);    // проверим выход на увлажнитель
-        invers = ~relayOut.value;
-        HAL_I2C_Master_Transmit(&hi2c1,0x4E,&invers,1,1000);
+    
+    // ----------- УВЛАЖНИТЕЛЬ только в режиме варка modeCell==2 и TMON && TMOFF !=0 --------------------
+    if(WORK && modeCell==2){
+      if(set[TMON]!=0 && set[TMOFF]!=0){
+        if(timer10ms){                  // шаг отсчета интервала таймера 10 милисек.
+          timer10ms=0; 
+          HUMIDI=humidifier(HUMIDI);    // проверим выход на увлажнитель
+          invers = ~relayOut.value;
+          HAL_I2C_Master_Transmit(&hi2c1,0x4E,&invers,1,1000);
+        }
       }
     }
-    else HUMIDI = OFF;
+    
     //-------------- Начало проверки каждую 1 сек. -----------------------
     if(CHECK){ CHECK = OFF; errors=0;  //if(++temp>10) {temp=0; ++pvspeed; pvspeed&=7; ds.pvT[1] = speedData[pvspeed][0]; sendToI2c(speedData[pvspeed][1]);}
       if(resetDispl) --resetDispl; else if(displ_num){displ_num = 0; NEWBUTT = 1;}  // возврат к главному дисплею
@@ -329,44 +332,12 @@ int main(void)
           case ON:  HEATER = ON;  break;
           case OFF: HEATER = OFF; break;
         }
-    #ifdef MANUAL_CHECK
-        //?????? Програмное задание температур ??????????
-        count++;
-        int16_t pverr = set[T0]*10 - ds.pvT[0];
-        if(pverr>150) dpv0 = 5;
-        else if(HEATER==ON) dpv0 = 1;
-        else if(HEATER==OFF) dpv0 =-1;
-        ds.pvT[0]+=dpv0;
-        //------------
-        if(count>3){ count=0;
-          pverr = ds.pvT[0] - ds.pvT[1];
-          dpv1 =-1;
-          if(pverr>200) dpv1 = 6;
-          else if(pverr>100) dpv1 = 4;
-          else if(pverr>50) dpv1 = 2;
-          else if(pverr>10) dpv1 = 1;
-          ds.pvT[1]+=dpv1;
-        }
-        //------------
-        pverr = set[T2]*10 - ds.pvT[2];
-        if(pverr>50) dpv2 = 5;
-        else if(pverr>25) dpv2 = 1;
-        else if(pverr<-25) dpv2 = -1;
-        if(i16==OFF) dpv2=0;
-        ds.pvT[2]+=dpv2;
-        //------------
-        pverr = set[T3]*10 - ds.pvT[3];
-        if(pverr>50) dpv2 = 5;
-        else if(pverr>25) dpv2 = 1;
-        else if(pverr<-25) dpv2 = -1;
-        ds.pvT[2]+=dpv2;
-        //????????????????????????????????????????????????
-    #endif
+        
         //-------------------------- Только для режима КОПЧЕНИЯ ---------------------------------
         if(modeCell==3){
           ELECTRO = ignition(ELECTRO);
-          i16 = set[T2]*10 - ds.pvT[2];     // величина ошибки регулирования датчика 2 (Дым)
-          if(++checkSmoke>CHKSMOKE){       // (відхилення 2 грд.Ц) ТЕМПЕРАТУРЫ ДЫМА
+          i16 = set[T2]*10 - ds.pvT[2];   // величина ошибки регулирования датчика 2 (Дым)
+          if(++checkSmoke>CHKSMOKE){      // (відхилення 2 грд.Ц) ТЕМПЕРАТУРЫ ДЫМА
             checkSmoke=CHKSMOKE;
             if(abs(i16)>set[ALRM]*10*2) errors|=ERR6;
           }
@@ -376,7 +347,57 @@ int main(void)
             case OFF: SMOKE = OFF; break;
           }
         }
-        //---------------------------------------------------------------------------------------
+        
+        //-------------------------- Только для режима ВАРЕНИЯ ---------------------------------
+        if(modeCell==2){
+          if(set[TMON]==0 || set[TMOFF]==0){
+            i16 = set[T3]*10 - ds.pvT[3];     // величина ошибки регулирования датчика 3 (Влажность)
+            u16 = Relay(i16, set[HIST]);      // ЧЕТВЕРТЫЙ датчик - датчик влажности
+            if(ds.pvT[0] < BEGINHUM) u16=OFF; // запрет увлажнения при температуре ниже 40 грд.
+            switch (u16){
+              case ON:  HUMIDI = ON;  break;
+              case OFF: HUMIDI = OFF; break;
+            }
+          }
+        }
+//        else HUMIDI = OFF;
+
+#ifdef MANUAL_CHECK
+        //?????? Програмное задание температур ??????????
+        count++;
+        //-----температура воздуха------
+        int16_t pverr = set[T0]*10 - ds.pvT[0];
+        if(pverr>150) dpv0 = 5;
+        else if(HEATER==ON) dpv0 = 1;
+        else if(HEATER==OFF) dpv0 =-1;
+        ds.pvT[0]+=dpv0;
+        //----температура среды------
+        if(count>3){ count=0;
+          pverr = ds.pvT[0] - ds.pvT[1];
+          dpv1 =-1;
+          if(pverr>200) dpv1 = 6;
+          else if(pverr>100) dpv1 = 4;
+          else if(pverr>50) dpv1 = 2;
+          else if(pverr>10) dpv1 = 1;
+          ds.pvT[1]+=dpv1;
+        }
+        //-----температура дыма---------
+        pverr = set[T2]*10 - ds.pvT[2];
+        if(pverr>50) dpv2 = 5;
+        else if(pverr>25) dpv2 = 1;
+        else if(pverr<-25) dpv2 = -1;
+        if(i16==OFF) dpv2=0;
+        ds.pvT[2]+=dpv2;
+        //----влажный датчик--------
+        pverr = set[T3]*10 - ds.pvT[3];
+        if(pverr>150) dpv3 = 5;
+        else if(HUMIDI==ON) dpv3 = 1;
+        else if(HUMIDI==OFF) dpv3 = -1;
+        ds.pvT[3]+=dpv3;
+        //????????????????????????????????????????????????
+#endif
+        
+        //------------------------- ЗВЕРШЕНИЕ текущего режима ----------------------------------
         if(set[TMR0]>0){                                // если TMR0>0 то завершение режима по таймеру
           u16 = sTime.Hours*60 + sTime.Minutes;         // всего в минутах
           i16 = (set[TMR0] - u16)*60 - sTime.Seconds;   // осталось до выключения в секундах

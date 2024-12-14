@@ -184,7 +184,7 @@ void checkButtons(uint8_t item){
         else if(numSet==3){maxVal=1440, minVal=0;}// Длительность режима мин.
         else if(numSet==5 || numSet==6){
           // если ВАРКА (modeCell=2) задается в mсек.[от 0.1сек. до 10 сек.] (период 10 mсек.)
-          if(modeCell==2){maxVal=100, minVal=1;} else {maxVal=500, minVal=0;}// Таймер ON/OFF
+          if(modeCell==2){maxVal=100, minVal=0;} else {maxVal=500, minVal=0;}// Таймер ON/OFF
         }
         switch (item){
           case 0: displ_num = 2; NEWBUTT = 1; break;
@@ -259,7 +259,7 @@ void checkButtons(uint8_t item){
         if(numSet==0){maxVal=1800, minVal=0;}// продувкa сек.
         else if(numSet==1){maxVal=50, minVal=1;}// Авария грд
         else if(numSet==2){maxVal=50, minVal=1;}// Гистерезис грд/10
-        else if(numSet==3){maxVal=3, minVal=0;}// // прямое/инвесное управление
+        else if(numSet==3){maxVal=3, minVal=0;} // прямое/инвесное управление
         else if(numSet==4){maxVal=50, minVal=1;}// пропорциональный
         else if(numSet==5){maxVal=1000, minVal=100;}// интегральный
         switch (item){

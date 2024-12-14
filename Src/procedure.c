@@ -43,18 +43,12 @@ uint8_t Relay(int16_t err, uint8_t hst) // [n] канал № 1 или 2
 }
 
 uint8_t humidifier(uint8_t value){
-  if(set[TMON]==0 || set[TMOFF]==0){                                            // если TMON или TMOFF равно 0 то вкючение увлажнителя по датчику.
-    if(ds18b20_amount==3) value = Relay((int)set[T3]*10 - ds.pvT[3], set[HIST]);// третий датчик - датчик влажности
-//    else if(AM2301) value = Relay((int)set[T2] - pvRH, set[HIST]);              // DHT-21 - датчик влажности
-  }
-  else {
-     if(value){
-        if(tmrCounter) tmrCounter--; else {value=OFF; tmrCounter=set[TMOFF]*10;} // Длительность паузы 18*10=180*10msek.=1.8sek
-     }
-     else {
-        if(tmrCounter) tmrCounter--; else {value=ON; tmrCounter=set[TMON]*10;}  // Длительность впрыска 6*10=60*10msek.=0.6sek
-     }
-  }
+   if(value){
+      if(tmrCounter) tmrCounter--; else {value=OFF; tmrCounter=set[TMOFF]*10;} // Длительность паузы 18*10=180*10msek.=1.8sek
+   }
+   else {
+      if(tmrCounter) tmrCounter--; else {value=ON; tmrCounter=set[TMON]*10;}  // Длительность впрыска 6*10=60*10msek.=0.6sek
+   }
   if(ds.pvT[0] < BEGINHUM) value=OFF;        // запрет увлажнения при температуре ниже 40 грд.
   return value;
 }
