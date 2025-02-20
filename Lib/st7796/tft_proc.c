@@ -260,8 +260,9 @@ void checkButtons(uint8_t item){
         else if(numSet==1){maxVal=50, minVal=1;}// Авария грд
         else if(numSet==2){maxVal=50, minVal=1;}// Гистерезис грд/10
         else if(numSet==3){maxVal=3, minVal=0;} // прямое/инвесное управление
-        else if(numSet==4){maxVal=50, minVal=1;}// пропорциональный
-        else if(numSet==5){maxVal=1000, minVal=100;}// интегральный
+        else if(numSet==4){maxVal=100, minVal=1;}// пропорциональный
+        else if(numSet==5){maxVal=1000, minVal=0;}// интегральный
+        else if(numSet==6){maxVal=100, minVal=0;}// диференциальный
         switch (item){
           case 0: displ_num = 5; NEWBUTT = 1; break;
           case 1: newval[numSet]+=1;	

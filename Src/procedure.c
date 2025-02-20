@@ -10,8 +10,6 @@ extern int16_t pvRH, tmrCounter;
 extern uint16_t speedData[MAX_SPEED][2];
 extern uint8_t familycode[MAX_SENSOR][8], ds18b20_amount, ticBeep, errors, tmrVent;
 
-extern union DataRam dataRAM;
-
 union b2{
     uint16_t val;
     uint8_t data[2];
@@ -66,25 +64,57 @@ uint8_t ignition(uint8_t value){
   return value;
 }
 
-uint8_t UpdatePID(uint8_t cn){
- int err;
- float pPart, Ud;
- static float iPart;
-  err = set[cn]*10 - ds.pvT[cn];
-  pPart = (float) err * dataRAM.config.koff[0];                  // расчет пропорциональной части
-//---- функци€ ограничени€ pPart ---------------
-  if (pPart < 0) pPart = 0;
-  else if (pPart > 100) pPart = 100;             // функци€ ограничени€
-//----------------------------------------------
-  iPart += (float) dataRAM.config.koff[0] / dataRAM.config.koff[1] * err;      // приращение интегральной части
-  Ud = pPart + iPart;                            // выход регул€тора до ограничени€
-//---- функци€ ограничени€ Ud ------------------
-  if (Ud < 0) Ud = 0;
-  else if (Ud > 100) Ud = 100;                   // функци€ ограничени€
-  iPart = Ud - pPart;                            // "антинасыщ€юща€" поправка
-  err = Ud;
-  return err;
-};
+//uint8_t UpdatePID(uint8_t cn){
+// int err;
+// float pPart, Ud;
+// static float iPart;
+//  err = set[cn]*10 - ds.pvT[cn];
+//  pPart = (float) err * dataRAM.config.koff[0];                  // расчет пропорциональной части
+////---- функци€ ограничени€ pPart ---------------
+//  if (pPart < 0) pPart = 0;
+//  else if (pPart > 100) pPart = 100;             // функци€ ограничени€
+////----------------------------------------------
+//  iPart += (float) dataRAM.config.koff[0] / dataRAM.config.koff[1] * err;      // приращение интегральной части
+//  Ud = pPart + iPart;                            // выход регул€тора до ограничени€
+////---- функци€ ограничени€ Ud ------------------
+//  if (Ud < 0) Ud = 0;
+//  else if (Ud > 100) Ud = 100;                   // функци€ ограничени€
+//  iPart = Ud - pPart;                            // "антинасыщ€юща€" поправка
+//  err = Ud;
+//  return err;
+//};
+
+uint8_t UpdatePID(PIDController *pid, uint8_t cn){
+ int16_t error, derivative;
+  // ¬ычисление ошибки
+  error = set[cn]*10 - ds.pvT[cn];
+  // ѕропорциональна€ составл€юща€
+  pid->pPart = error * pid->Kp;
+  // »нтегральна€ составл€юща€
+  pid->iPart += (float)error * pid->Ki;// * dt;
+  // ƒифференциальна€ составл€юща€
+  derivative = (error - pid->prev_error);// / dt;
+  pid->dPart = pid->Kd * derivative;
+  // —охран€ем текущую ошибку дл€ следующего вызова
+  pid->prev_error = error;
+  // —уммарное управл€ющее воздействие
+  pid->output = pid->pPart + pid->iPart + pid->dPart;
+  // ќграничение выходного значени€ и антивиндовинг
+    if (pid->output > 100) {
+        pid->output = 100;
+//        pid->iPart = 0;  // —брос интеграла
+    } else if (pid->output < 0) {
+        pid->output = 0;
+//        pid->iPart = 0;// * pid->dt;  // —брос интеграла
+    }
+    if (pid->pPart >= 100) {
+        pid->iPart = 0; // —брос интеграла
+    } else if (pid->pPart <= -100) {
+        pid->iPart = 0; // —брос интеграла
+    }
+  error = pid->output;
+  return error;
+}
 
 void permutation (char a, char b){
   uint8_t i, buff;

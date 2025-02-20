@@ -8,6 +8,12 @@ extern CRC_HandleTypeDef hcrc;
 
 union DataRam dataRAM;
 
+void PID_Init(PIDController *pid, uint16_t Kp, uint16_t Ki, uint16_t Kd) {
+    pid->Kp = Kp;
+    pid->Ki = (float)Ki/1000;
+    pid->Kd = Kd;
+}
+
 uint32_t calcChecksum(void){
     __HAL_RCC_CRC_CLK_ENABLE(); // ¬ключение clock дл€ CRC модул€
 //    CRC->CR = CRC_CR_RESET;     // —брасываем CRC модуль
@@ -42,6 +48,7 @@ void setData(uint8_t m){
       speedData[i][x] = dataRAM.config.speedData[i][x];
     }
   }
+  PID_Init(&pid, dataRAM.config.koff[0], dataRAM.config.koff[1], dataRAM.config.koff[2]);
 }
 
 uint8_t initData(void){
@@ -138,6 +145,7 @@ uint8_t initData(void){
     
     dataRAM.config.koff[0]=10;      // пропорциональный
     dataRAM.config.koff[1]=500;     // интегральный
+    dataRAM.config.koff[2]=0;       // дифференциальный
     
     for(i=0;i<8;i++){dataRAM.config.relaySet[i]=-1;}  // автоматическое управление
     for(i=0;i<2;i++){dataRAM.config.analogSet[i]=-1;} // автоматическое управление
@@ -218,6 +226,7 @@ uint32_t writeData(void){
     l_Index = l_Index + 1;
     l_Address = l_Address + 4;
   }
+  setData(modeCell);
   return l_Error;
 }
 /*

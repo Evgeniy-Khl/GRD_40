@@ -82,7 +82,7 @@ void Error_Handler(void);
 #define MAX_SENSOR  4
 #define MAX_MODE    4
 #define MAX_SET     8
-#define MAX_OTHER   6
+#define MAX_OTHER   7
 #define MAX_SPEED   8
 #define ON          1
 #define OFF         0
@@ -113,12 +113,12 @@ void Error_Handler(void);
 
 
 
-#define MANUAL_CHECK
+//#define MANUAL_CHECK
 
 #ifdef MANUAL_CHECK
-  #define CHKSMOKE  180 // (3 мин.) отжидание проверки температуры дыма в сек.
+  #define CHKSMOKE  180 // (3 min.) waiting for smoke temperature check in sec.
 #else
-  #define CHKSMOKE  1500 // (25 мин.) отжидание проверки температуры дыма в сек.
+  #define CHKSMOKE  1500 // (25 min.) waiting for smoke temperature check in sec.
 #endif
 #define BEGINCOOL 400 // температура 40 грд. выше которой ЗАПРЕЩЕНО включение охлаждения
 #define BEGINHUM  400 // запрет увлажнения при температуре ниже 40 грд.
@@ -147,6 +147,14 @@ struct Ds{
 };
 
 extern struct Ds ds;
+
+typedef struct {
+    float Ki, iPart;  // Коэффициенты PID
+    int16_t pPart, dPart, prev_error, output;
+    uint16_t Kp, Kd;
+} PIDController;
+
+extern PIDController pid;
 
 #define CHECK   portFlag.bitfield.a0  // Start of all checks
 #define SPEED   portFlag.bitfield.a1  // Speed Ok.

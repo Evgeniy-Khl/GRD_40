@@ -2,10 +2,12 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : GRD 4.0 inch 07.10.2024
+  * @brief          : GRD 4.0 inch 22.01.2025
   ******************************************************************************
   *
-  * Program Size: Code=30348 RO-data=11220 RW-data=232 ZI-data=2584  
+  * Program Size: Code=31148 RO-data=11208 RW-data=232 ZI-data=2584  
+  * certutil -hashfile e:\!PROJECTS\!STM32\2025\GRD_40\MDK-ARM\GRD_40\GRD_40.hex SHA1
+  * d4f86b9297aaa9c98f087b2d9cfff38c926e7753
   *
   ******************************************************************************
   */
@@ -61,7 +63,7 @@ RTC_DateTypeDef sDate;
 char buffTFT[40];
 const char* modeName[4]={"СУШЫННЯ","ОБЖАРКА","ВАРЫННЯ","КОПЧЕННЯ"};
 const char* setName[MAX_SET]={"t КАМЕРИ","t ПРОДУКТА","t ДИМА","ТРИВАЛЫСТЬ","ШВИДКЫСТЬ","ТАЙМ.ON","ТАЙМ.OFF","ЫНШЕ"};
-const char* otherName[MAX_OTHER]={"ПРОДУВАННЯ","АВАРЫЯ","ГЫСТЕРЕЗ","ОХОЛОДЖ.","Prop","Integ"};
+const char* otherName[MAX_OTHER]={"ПРОДУВАННЯ","АВАРЫЯ","ГЫСТЕРЕЗ","ОХОЛОДЖ.","Prop","Integ","Diff"};
 const char* relayName[7]={"ПЫД","НАГРЫВ","ТАЙМЕР","ВОЛОГА","ЕЛЕКТРО","Кл.ДИМА","Кл.ВОДИ"};
 //const char* analogName[2]={"ВЕНТИЛ.","ЫНШЕ"};
 //        2.00V        3.15V        4.30V        5.45V        6.60V        7.75V        8.90V        10.00V
@@ -72,7 +74,7 @@ uint16_t speedData[MAX_SPEED][2], errors;
 int16_t pvTH, pvRH, tmrCounter;
 uint16_t set[INDEX], touch_x, touch_y, Y_str, X_left, Y_top, Y_bottom, fillScreen, color0, color1, checkTime, checkSmoke;
 uint8_t displ_num=0, modeCell, oldNumSet, buttonAmount, lost;
-uint8_t timer10ms, tmrVent, ticBeep, pwTriac, invers;
+uint8_t timer10ms, tmrVent, ticBeep, pwTriac, invers, dsplPW;
 uint8_t familycode[MAX_SENSOR][8];
 int8_t ds18b20_amount, numSet=0, resetDispl=0, tmrWater;
 int8_t relaySet[8]={-1,-1,-1,-1,-1,-1,-1,-1};
@@ -80,7 +82,10 @@ int8_t analogSet[2]={-1,-1};
 uint8_t analogOut[2]={0};
 union Byte portFlag;
 union Byte relayOut;
-
+PIDController pid;
+//#ifdef MANUAL_CHECK
+  float flT0=320, dpv0;
+//#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,9 +127,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
   int16_t i16;
   uint16_t u16;
-  #ifdef MANUAL_CHECK
-    
-  #endif
 //  uint8_t temp=0, pvspeed=0;
   /* USER CODE END 1 */
 
@@ -158,17 +160,13 @@ int main(void)
   HAL_Delay(200);
   HAL_GPIO_WritePin(Beep_GPIO_Port, Beep_Pin, GPIO_PIN_RESET);
 
-  Y_bottom=lcddev.height-22; Y_str = 5;
   fillScreen = BLACK; color0 = WHITE;
-  #ifdef MANUAL_CHECK
-    LCD_Init(USE_VERTICAL1);
-  #else
-    LCD_Init(USE_VERTICAL0);
-  #endif
+  Y_bottom=lcddev.height-22; Y_str = 5;
+  LCD_Init(USE_VERTICAL0);
   GUI_Clear(fillScreen);
   if((lcddev.dir&1)==0) X_left = 20; else X_left = 100;
   GUI_WriteString(35, Y_str, "GRD Max", Font_16x26, WHITE, fillScreen);
-  GUI_WriteString(165, Y_str+5, " v 4.0", Font_11x18, WHITE, fillScreen);
+  GUI_WriteString(165, Y_str+5, " v 4.1", Font_11x18, WHITE, fillScreen);
   Y_str = Y_str+18+35;
   
   i16 = initData();
@@ -201,10 +199,6 @@ int main(void)
   GUI_WriteString(5, Y_str, buffTFT, Font_11x18, CYAN, BLACK);
   Y_str = Y_str+18+5;
   
-//  sprintf(buffTFT,"WIDTH: %u; HEIGHT: %u",lcddev.width,lcddev.height);
-//  GUI_WriteString(5, Y_str, buffTFT, Font_11x18, WHITE, BLACK);
-//  Y_str = Y_str+18+5;
-  
   HAL_GPIO_WritePin(Beep_GPIO_Port, Beep_Pin, GPIO_PIN_SET);
   HAL_Delay(200);
   HAL_GPIO_WritePin(Beep_GPIO_Port, Beep_Pin, GPIO_PIN_RESET);
@@ -216,12 +210,19 @@ int main(void)
   HAL_RTCEx_SetSecond_IT(&hrtc);          /* ------  таймер 1Гц.  период  1 сек.    ----*/
   HAL_TIM_Base_Start_IT(&htim1);          /* ------  таймер 100Гц.  период  10 мс.  ----*/
   
-  HAL_Delay(2000);
   NEWBUTT = ON;
   #ifdef MANUAL_CHECK
-  ds.pvT[0]=320; ds.pvT[1]=220; ds.pvT[2]=150; ds.pvT[3]=200;
-  int8_t dpv0 = 2, dpv1 = 2, dpv2 = 2, dpv3 = 2, count;
+      sprintf(buffTFT,"WIDTH: %u; HEIGHT: %u",lcddev.width,lcddev.height);
+      GUI_WriteString(5, Y_str, buffTFT, Font_11x18, YELLOW, BLACK);
+      Y_str = Y_str+18+5;
+      sprintf(buffTFT,"Kp=%3u; Ki=%2.2f; Kd=%3u;",pid.Kp,pid.Ki,pid.Kd);
+      GUI_WriteString(5, Y_str, buffTFT, Font_11x18, YELLOW, BLACK);
+      Y_str = Y_str+18+5;
+      ds.pvT[1]=220; ds.pvT[2]=150; ds.pvT[3]=200;
+      int8_t dpv1 = 2, dpv2 = 2, dpv3 = 2, count;
+      
   #endif
+  HAL_Delay(2000);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -255,7 +256,8 @@ int main(void)
     
     //-------------- Начало проверки каждую 1 сек. -----------------------
     if(CHECK){ CHECK = OFF; errors=0;  //if(++temp>10) {temp=0; ++pvspeed; pvspeed&=7; ds.pvT[1] = speedData[pvspeed][0]; sendToI2c(speedData[pvspeed][1]);}
-      if(resetDispl) --resetDispl; else if(displ_num){displ_num = 0; NEWBUTT = 1;}  // возврат к главному дисплею
+    dsplPW = 0;  
+    if(resetDispl) --resetDispl; else if(displ_num){displ_num = 0; NEWBUTT = 1;}  // возврат к главному дисплею
     #ifndef MANUAL_CHECK
       temperature_check();
     #endif
@@ -263,6 +265,9 @@ int main(void)
       if(VENTIL){
         if(HAL_GPIO_ReadPin(Input0_GPIO_Port, Input0_Pin) == GPIO_PIN_RESET) {SPEED=ON; tmrVent=0;} // если контакт замкнут
         else SPEED=OFF;
+    #ifdef MANUAL_CHECK
+        SPEED=ON; tmrVent=0;
+    #endif
         if(tmrVent) --tmrVent;    // ожидаем замыкания контакта частотного преобразователя
         else if(SPEED) WORK=ON;
         else {errors |= ERR8; WORK=OFF; relayOut.value=OFF;}  // НЕ ПРАЦЮЭ ВЕНТИЛЯТОР
@@ -286,12 +291,12 @@ int main(void)
         u16 = set[ALRM]*10;                     // привяжем к аварии
         
         if(i16<=0){
-          if(abs16<u16)color0 = GREEN;          // норма
+          if(abs16<u16) color0 = GREEN;         // норма
           else if(abs16>=u16 && abs16<u16*2){errors|=ERR5; color0 = MAGENTA;} // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
           else {errors|=ERR3; color0 = RED;}    // ПЕРЕГРЕВ В КАМЕРЕ
         }
         else {
-          if(abs16<u16)color0 = GREEN;          // норма
+          if(abs16<u16) color0 = GREEN;         // норма
           else if(abs16>=u16*2){
             color0 = CYAN;                      // НИЖЕ нормы
             if(PERFECT) errors|=ERR5;           // ВІДХІЛЕННЯ ТЕМПЕРАТУРИ
@@ -316,12 +321,13 @@ int main(void)
         //------ работает как нагреватель
         if(ds.pvT[0]<1999 && ds.pvT[0]>1){
           i16 = Relay(set[T0]*10 - ds.pvT[0], set[HIST]);   // величина ошибки температуры воздуха
-          pwTriac = UpdatePID(0);                           // ПИД нагреватель
+          pwTriac = UpdatePID(&pid,0);                      // ПИД нагреватель
         }
         if(ds18b20_amount>1 && ds.pvT[1]<1999){             // величина ошибки температурs среды
-          if(i16==1) i16 = Relay(set[T1]*10 - ds.pvT[1], set[HIST]/2);
-          if(i16==OFF) pwTriac = OFF;                       // температура среды достигла заданной величины
+          if(i16==ON) i16 = Relay(set[T1]*10 - ds.pvT[1], set[HIST]/2);
+//          if(i16==OFF) pwTriac = OFF;                       // температура среды достигла заданной величины
         }
+        dsplPW = pwTriac;
         if(pwTriac) TRIAC = ON;                             // включить (SSR-25DA)
         //------ работает как охладитель
         if(set[CHILL]&1){  
@@ -366,14 +372,13 @@ int main(void)
         //?????? Програмное задание температур ??????????
         count++;
         //-----температура воздуха------
+        dpv0 = (float)pid.pPart/500 + (float)(pid.output-5)/100;
+        flT0+=dpv0;
+        ds.pvT[0] = flT0;
         int16_t pverr = set[T0]*10 - ds.pvT[0];
-        if(pverr>150) dpv0 = 5;
-        else if(HEATER==ON) dpv0 = 1;
-        else if(HEATER==OFF) dpv0 =-1;
-        ds.pvT[0]+=dpv0;
         //----температура среды------
         if(count>3){ count=0;
-          pverr = ds.pvT[0] - ds.pvT[1];
+          pverr = set[T1]*10 - ds.pvT[1];
           dpv1 =-1;
           if(pverr>200) dpv1 = 6;
           else if(pverr>100) dpv1 = 4;
